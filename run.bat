@@ -1,0 +1,1 @@
+mvn  mybatis-generator:generate -f sample.pom.xml
