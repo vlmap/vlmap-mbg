@@ -21,7 +21,7 @@
                 <artifactId>mybatis-generator-maven-plugin</artifactId>
                 <version>${mybatis-generator.version}</version>
                 <dependencies>
-
+                    <!--依赖分文件插件-->
                     <dependency>
                         <groupId>com.github.vlmap</groupId>
                         <artifactId>vlmap-mbg</artifactId>

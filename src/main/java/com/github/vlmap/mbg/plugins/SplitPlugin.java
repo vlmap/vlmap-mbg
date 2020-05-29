@@ -27,7 +27,7 @@ public class SplitPlugin extends PluginAdapter {
     /**
      * Base类的父类前缀
      */
-    private String baseParentClassPrefix;
+    private String baseClassPrefix;
 
     @Override
     public boolean validate(List<String> list) {
@@ -38,12 +38,12 @@ public class SplitPlugin extends PluginAdapter {
     @Override
     public void initialized(IntrospectedTable introspectedTable) {
         basePackage = this.properties.getProperty("basePackage");
-        baseParentClassPrefix = this.properties.getProperty("baseParentClassPrefix");
+        baseClassPrefix = this.properties.getProperty("baseClassPrefix");
         if (basePackage == null) {
             basePackage = "base";
         }
-        if (isBlank(baseParentClassPrefix)) {
-            baseParentClassPrefix = "Base";
+        if (isBlank(baseClassPrefix)) {
+            baseClassPrefix = "Base";
         }
         List<File> list = new ArrayList<>();
 
@@ -75,7 +75,7 @@ public class SplitPlugin extends PluginAdapter {
         String key = "BaseModelClass";
         TopLevelClass result = (TopLevelClass) introspectedTable.getAttribute(key);
         if (result == null) {
-            result = new TopLevelClass(new FullyQualifiedJavaType(new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()).getPackageName() + baseName(basePackage, baseParentClassPrefix) + new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()).getShortName()));
+            result = new TopLevelClass(new FullyQualifiedJavaType(new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()).getPackageName() + baseName(basePackage, baseClassPrefix) + new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()).getShortName()));
             introspectedTable.setAttribute(key, result);
         }
 
@@ -87,7 +87,7 @@ public class SplitPlugin extends PluginAdapter {
         String key = "BaseMapperInterface";
         Interface result = (Interface) introspectedTable.getAttribute(key);
         if (result == null) {
-            result = new Interface(new FullyQualifiedJavaType(new FullyQualifiedJavaType(introspectedTable.getMyBatis3JavaMapperType()).getPackageName() + baseName(basePackage, baseParentClassPrefix) + new FullyQualifiedJavaType(introspectedTable.getMyBatis3JavaMapperType()).getShortName()));
+            result = new Interface(new FullyQualifiedJavaType(new FullyQualifiedJavaType(introspectedTable.getMyBatis3JavaMapperType()).getPackageName() + baseName(basePackage, baseClassPrefix) + new FullyQualifiedJavaType(introspectedTable.getMyBatis3JavaMapperType()).getShortName()));
             introspectedTable.setAttribute(key, result);
         }
         return result;
@@ -259,7 +259,8 @@ public class SplitPlugin extends PluginAdapter {
 
 
         XmlElement baseMapperXml = this.getBaseMapperXml(introspectedTable);
-        TopLevelClass baseMapperClass = this.getBaseModelClass(introspectedTable);
+
+        Interface baseMapperClass = this.getBaseMapperInterface(introspectedTable);
 
         Document document = new Document(
                 XmlConstants.MYBATIS3_MAPPER_PUBLIC_ID,
