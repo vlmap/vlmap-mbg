@@ -10,7 +10,7 @@
 
 #### 安装教程
 
-1. git clone https://gitee.com/luck/vlmap-mbg.git
+1. git clone https://github.com/vlmap/vlmap-mbg.git
 
 2. cd mybatis-mbg
 
