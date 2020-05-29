@@ -79,7 +79,7 @@ mvn mybatis-generator:generate -f sample.pom.xml
     <!--指定抽象类所在的子包-->
     <property name="basePackage" value="base"/>
     <!--指定抽象类名称前缀-->
-    <property name="baseParentClassPrefix" value="Base"/>
+    <property name="baseClassPrefix" value="Base"/>
 </plugin>
 
 
