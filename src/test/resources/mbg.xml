@@ -41,7 +41,7 @@
         </commentGenerator>
 
         <jdbcConnection
-                connectionURL="jdbc:mysql://172.18.70.50:3306/mybatis"
+                connectionURL="jdbc:mysql://127.0.0.1:3306/mybatis"
                 driverClass="com.mysql.jdbc.Driver" password="root" userId="root">
             <property name="nullCatalogMeansCurrent" value="true"/>
         </jdbcConnection>
@@ -94,7 +94,7 @@
 
 
         <table
-                domainObjectName="Demo"
+                domainObjectName="DemoEntity"
 
                 tableName="demo"
                 enableCountByExample="false"
@@ -104,8 +104,8 @@
 
 
         >
+            <property name="model" value="com.github.vlmap.mbg.test.DemoEntity"/>
 
-        <columnOverride column="data" property="aaaaaa" />
 
         </table>
     </context>
