@@ -21,6 +21,10 @@
 
 
 
+        <plugin type="com.github.vlmap.mbg.plugins.HbmPlugin">
+            <property name="type" value="com.github.vlmap.mbg.plugins.HbmPlugin"/>
+
+        </plugin>
         <!--这个插件应该最后加载-->
         <plugin type="com.github.vlmap.mbg.plugins.SplitPlugin">
             <property name="type" value="com.github.vlmap.mbg.plugins.SplitPlugin"/>
@@ -58,7 +62,14 @@
         </javaClientGenerator>
 
 
-        <table domainObjectName="Student" tableName="t_student">
+        <table domainObjectName="Student" tableName="t_student"
+               enableCountByExample="false"
+               enableDeleteByExample="false"
+               enableSelectByExample="false"
+               enableUpdateByExample="false"
+
+
+        >
             <generatedKey column="n_id" sqlStatement="MySql" identity="true"/>
 
             <columnRenamingRule searchString="^(s_|t_|n_)" replaceString=""/>
@@ -78,6 +89,23 @@
 
 
 
+
+        </table>
+
+
+        <table
+                domainObjectName="Demo"
+
+                tableName="demo"
+                enableCountByExample="false"
+                enableDeleteByExample="false"
+                enableSelectByExample="false"
+                enableUpdateByExample="false"
+
+
+        >
+
+        <columnOverride column="data" property="aaaaaa" />
 
         </table>
     </context>

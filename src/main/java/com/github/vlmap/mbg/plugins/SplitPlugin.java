@@ -81,7 +81,16 @@ public class SplitPlugin extends PluginAdapter {
 
         return result;
     }
+    protected TopLevelClass getBasePrimaryKeyClass(IntrospectedTable introspectedTable) {
+        String key = "BasePrimaryKeyClass";
+        TopLevelClass result = (TopLevelClass) introspectedTable.getAttribute(key);
+        if (result == null) {
+            result = new TopLevelClass(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType()));
+            introspectedTable.setAttribute(key, result);
+        }
 
+        return result;
+    }
     protected Interface getBaseMapperInterface(IntrospectedTable introspectedTable) {
 
         String key = "BaseMapperInterface";
@@ -167,12 +176,21 @@ public class SplitPlugin extends PluginAdapter {
 
 
         TopLevelClass baseModelClass = this.getBaseModelClass(introspectedTable);
+        TopLevelClass primaryKeyClass = this.getBasePrimaryKeyClass(introspectedTable);
+
         Interface baseMapperInterface = this.getBaseMapperInterface(introspectedTable);
 
         baseModelClass.setVisibility(JavaVisibility.PUBLIC);
         baseModelClass.setAbstract(true);
         GeneratedJavaFile javaFile = new GeneratedJavaFile(baseModelClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
         File file = Util.getTargetFile(javaFile);
+        if (file.exists()) {
+            System.out.println("Delete BaseModel JavaFile:" + file.toString());
+            file.delete();
+
+        }
+
+        file = Util.getTargetFile(new GeneratedJavaFile(baseModelClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter()));
         if (file.exists()) {
             System.out.println("Delete BaseModel JavaFile:" + file.toString());
             file.delete();
