@@ -40,16 +40,20 @@
             <property name="suppressDate" value="true"></property>
         </commentGenerator>
 
+        <!--<jdbcConnection-->
+                <!--connectionURL="jdbc:mysql://127.0.0.1:3306/mybatis"-->
+                <!--driverClass="com.mysql.jdbc.Driver" password="root" userId="root">-->
+            <!--<property name="nullCatalogMeansCurrent" value="true"/>-->
+        <!--</jdbcConnection>-->
         <jdbcConnection
-                connectionURL="jdbc:mysql://127.0.0.1:3306/mybatis"
+                connectionURL="jdbc:mysql://172.18.70.50:3306/mybatis"
                 driverClass="com.mysql.jdbc.Driver" password="root" userId="root">
             <property name="nullCatalogMeansCurrent" value="true"/>
         </jdbcConnection>
-
         <!--<javaTypeResolver type="com.github.vlmap.mybatis.generator.JavaTypeResolverJsr310Impl"/>-->
 
         <javaModelGenerator targetPackage="com.sample.entity"
-                            targetProject="${user.dir}/../mbg-sample/sample-model/src/main/java">
+                            targetProject="${user.dir}/../mbg-sample/sample-dao/src/main/java">
             <property name="rootInterface" value="java.io.Serializable"/>
         </javaModelGenerator>
 
@@ -97,14 +101,24 @@
                 domainObjectName="DemoEntity"
 
                 tableName="demo"
-                enableCountByExample="false"
-                enableDeleteByExample="false"
-                enableSelectByExample="false"
-                enableUpdateByExample="false"
+
 
 
         >
             <property name="model" value="com.github.vlmap.mbg.test.DemoEntity"/>
+
+
+        </table>
+
+        <table
+                domainObjectName="DemoEntityss"
+
+                tableName="demo2"
+
+
+
+        >
+            <property name="model" value="com.github.vlmap.mbg.test.DemoEntity2"/>
 
 
         </table>

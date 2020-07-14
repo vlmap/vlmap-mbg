@@ -1,5 +1,6 @@
 package com.github.vlmap.mbg.plugins;
 
+import com.github.vlmap.mbg.core.IntrospectedTableUtils;
 import org.mybatis.generator.api.*;
 import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
 import org.mybatis.generator.api.dom.java.Interface;
@@ -119,37 +120,39 @@ public class SplitPlugin extends PluginAdapter {
      */
     @Override
     public boolean modelBaseRecordClassGenerated(TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
+        if (!IntrospectedTableUtils.isHbmIntrospectedTable(introspectedTable)) {
+
+            TopLevelClass baseModelClass = this.getBaseModelClass(introspectedTable);
+            baseModelClass.getFields().addAll(topLevelClass.getFields());
+            topLevelClass.getFields().clear();
 
 
-        TopLevelClass baseModelClass = this.getBaseModelClass(introspectedTable);
-        baseModelClass.getFields().addAll(topLevelClass.getFields());
-        topLevelClass.getFields().clear();
+            baseModelClass.getMethods().addAll(topLevelClass.getMethods());
+            topLevelClass.getMethods().clear();
 
 
-        baseModelClass.getMethods().addAll(topLevelClass.getMethods());
-        topLevelClass.getMethods().clear();
+            baseModelClass.getInnerClasses().addAll(topLevelClass.getInnerClasses());
+            topLevelClass.getInnerClasses().clear();
+
+            baseModelClass.getInnerEnums().addAll(topLevelClass.getInnerEnums());
+            topLevelClass.getInnerEnums().clear();
+
+            baseModelClass.getJavaDocLines().addAll(topLevelClass.getJavaDocLines());
+            topLevelClass.getJavaDocLines().clear();
+
+            baseModelClass.setSuperClass(topLevelClass.getSuperClass());
 
 
-        baseModelClass.getInnerClasses().addAll(topLevelClass.getInnerClasses());
-        topLevelClass.getInnerClasses().clear();
-
-        baseModelClass.getInnerEnums().addAll(topLevelClass.getInnerEnums());
-        topLevelClass.getInnerEnums().clear();
-
-        baseModelClass.getJavaDocLines().addAll(topLevelClass.getJavaDocLines());
-        topLevelClass.getJavaDocLines().clear();
-
-        baseModelClass.setSuperClass(topLevelClass.getSuperClass());
+            Set<FullyQualifiedJavaType> superInterfaceTypes = topLevelClass.getSuperInterfaceTypes();
+            baseModelClass.getSuperInterfaceTypes().addAll(superInterfaceTypes);
+            superInterfaceTypes.clear();
 
 
-        Set<FullyQualifiedJavaType> superInterfaceTypes = topLevelClass.getSuperInterfaceTypes();
-        baseModelClass.getSuperInterfaceTypes().addAll(superInterfaceTypes);
-        superInterfaceTypes.clear();
+            topLevelClass.addImportedType(baseModelClass.getType());
 
+            topLevelClass.setSuperClass(baseModelClass.getType());
 
-        topLevelClass.addImportedType(baseModelClass.getType());
-
-        topLevelClass.setSuperClass(baseModelClass.getType());
+        }
 
 
         GeneratedJavaFile gjf = new GeneratedJavaFile(topLevelClass,
@@ -175,43 +178,40 @@ public class SplitPlugin extends PluginAdapter {
         List<GeneratedJavaFile> result = new ArrayList<>();
 
 
-        TopLevelClass baseModelClass = this.getBaseModelClass(introspectedTable);
-        TopLevelClass primaryKeyClass = this.getBasePrimaryKeyClass(introspectedTable);
+        if (!IntrospectedTableUtils.isHbmIntrospectedTable(introspectedTable)) {
 
+
+            TopLevelClass baseModelClass = this.getBaseModelClass(introspectedTable);
+            TopLevelClass primaryKeyClass = this.getBasePrimaryKeyClass(introspectedTable);
+
+
+            baseModelClass.setVisibility(JavaVisibility.PUBLIC);
+            baseModelClass.setAbstract(true);
+            GeneratedJavaFile javaFile = new GeneratedJavaFile(baseModelClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
+            File file = Util.getTargetFile(javaFile);
+            if (file.exists()) {
+                System.out.println("Delete BaseModel JavaFile:" + file.toString());
+                file.delete();
+
+            }
+
+            result.add(javaFile);
+
+
+        }
         Interface baseMapperInterface = this.getBaseMapperInterface(introspectedTable);
-
-        baseModelClass.setVisibility(JavaVisibility.PUBLIC);
-        baseModelClass.setAbstract(true);
-        GeneratedJavaFile javaFile = new GeneratedJavaFile(baseModelClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
-        File file = Util.getTargetFile(javaFile);
-        if (file.exists()) {
-            System.out.println("Delete BaseModel JavaFile:" + file.toString());
-            file.delete();
-
-        }
-
-        file = Util.getTargetFile(new GeneratedJavaFile(baseModelClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter()));
-        if (file.exists()) {
-            System.out.println("Delete BaseModel JavaFile:" + file.toString());
-            file.delete();
-
-        }
-        result.add(javaFile);
-
 
         baseMapperInterface.setVisibility(JavaVisibility.PUBLIC);
 
 
-        javaFile = new GeneratedJavaFile(baseMapperInterface, context.getJavaClientGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
-        file = Util.getTargetFile(javaFile);
+        GeneratedJavaFile javaFile = new GeneratedJavaFile(baseMapperInterface, context.getJavaClientGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
+        File file = Util.getTargetFile(javaFile);
         if (file.exists()) {
             System.out.println("Delete BaseMapper JavaFile:" + file.toString());
 
             file.delete();
         }
         result.add(javaFile);
-
-
         return result;
     }
 

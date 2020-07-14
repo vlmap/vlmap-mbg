@@ -16,7 +16,7 @@ public class DemoEntity implements Serializable {
     private String cc;
     @Column(name = "d")
 
-    private String dd;
+    private String dd="mmmmmm";
 
     public  Pk getId() {
         return id;
