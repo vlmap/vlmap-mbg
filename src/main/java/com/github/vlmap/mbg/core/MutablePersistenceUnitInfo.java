@@ -1,4 +1,4 @@
-package com.github.vlmap.mbg.plugins;
+package com.github.vlmap.mbg.core;
 
 
 import java.net.URL;

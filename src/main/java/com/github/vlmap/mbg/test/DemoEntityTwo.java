@@ -5,8 +5,8 @@ import java.io.Serializable;
 
 @Entity
 @Table(name="demo2",schema = "test")
-@IdClass(DemoEntity2.class)
-public class DemoEntity2 implements Serializable {
+@IdClass(DemoEntityKey.class)
+public class DemoEntityTwo implements Serializable {
     @Id
     @Column(name = "a")
     String aa;

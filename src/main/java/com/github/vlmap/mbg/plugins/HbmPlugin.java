@@ -1,11 +1,9 @@
 package com.github.vlmap.mbg.plugins;
 
 import com.github.vlmap.mbg.core.DelegatingIntrospectedTable;
+import com.github.vlmap.mbg.core.HbmEntityUtils;
 import com.github.vlmap.mbg.core.IntrospectedTableUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl;
-import org.hibernate.jpa.boot.internal.PersistenceUnitInfoDescriptor;
-import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.type.AbstractSingleColumnStandardBasicType;
 import org.hibernate.type.ComponentType;
@@ -21,16 +19,13 @@ import org.mybatis.generator.api.dom.xml.Element;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 import org.mybatis.generator.codegen.mybatis3.xmlmapper.elements.*;
 import org.mybatis.generator.config.Context;
-import org.mybatis.generator.config.TableConfiguration;
 import org.mybatis.generator.internal.PluginAggregator;
 import org.mybatis.generator.internal.util.JavaBeansUtil;
 
-import javax.persistence.EntityManagerFactory;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 
 
 /**
@@ -53,66 +48,13 @@ public class HbmPlugin extends PluginAdapter {
 
 
         if (!IntrospectedTableUtils.isHbmIntrospectedTable(introspectedTable)) return;
+
+
+        AbstractEntityPersister entityPersister =   HbmEntityUtils.entityPersister(introspectedTable);
+         introspectedTable.getTableConfiguration().setDomainObjectName(entityPersister.getType().getReturnedClass().getSimpleName());
         String modelClass = IntrospectedTableUtils.getHbmModelClass(introspectedTable);
         introspectedTable.setBaseRecordType(modelClass);
-        String dialect=   introspectedTable.getTableConfigurationProperty("hibernate.dialect");
 
-
-        EntityManagerFactory entityManagerFactory = null;
-        try {
-            Class clazz = Class.forName(modelClass);
-
-            List<String> classList = new ArrayList<>();
-            classList.add(clazz.getName());
-            java.lang.reflect.Method[] methods = clazz.getDeclaredMethods();
-            for (Method method : methods) {
-                Class type = method.getReturnType();
-                if (type != null) {
-                    classList.add(type.getName());
-                }
-                for (Class c : method.getParameterTypes()) {
-                    classList.add(c.getName());
-                }
-
-
-            }
-            Properties properties = new Properties();
-            if(StringUtils.isBlank(dialect)){
-                properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL5InnoDBDialect");
-            }else{
-                properties.put("hibernate.dialect", dialect);
-            }
-
-            PersistenceUnitInfoDescriptor descriptor = new PersistenceUnitInfoDescriptor(new MutablePersistenceUnitInfo()) {
-                @Override
-                public List<String> getManagedClassNames() {
-                    return classList;
-                }
-
-                @Override
-                public String getName() {
-                    return "defaut";
-                }
-
-                @Override
-                public ClassLoader getTempClassLoader() {
-                    return clazz.getClassLoader();
-                }
-
-                @Override
-                public ClassLoader getClassLoader() {
-                    return clazz.getClassLoader();
-                }
-            };
-
-            entityManagerFactory = new EntityManagerFactoryBuilderImpl(descriptor
-                    , properties).build();
-        } catch (Exception e) {
-            return;
-        }
-
-        MetamodelImplementor metamodelImplementor = (MetamodelImplementor) entityManagerFactory.getMetamodel();
-        AbstractEntityPersister entityPersister = (AbstractEntityPersister) metamodelImplementor.entityPersister(modelClass);
 
         IntrospectedTableUtils.entityPersiter(introspectedTable, entityPersister);
         String identifierPropertyName = entityPersister.getIdentifierPropertyName();
@@ -138,33 +80,35 @@ public class HbmPlugin extends PluginAdapter {
                 }
 
             }
-
+            introspectedTable.addPrimaryKeyColumn(identifierPropertyName);
         }
+        introspectedTable.setPrimaryKeyType(identifierType.getReturnedClass().getName());
 
 
 
-        if(entityPersister.getEntityMetamodel().getIdentifierProperty().isEmbedded()){
-            String[] propertyNames = entityPersister.getPropertyNames();
-            Type[] propertyTypes = entityPersister.getPropertyTypes();
-            if (propertyTypes != null) {
-                for (int i = 0, size = propertyNames.length; i < size; i++) {
-                    String columnName = entityPersister.getPropertyColumnNames(propertyNames[i])[0];
-                    String javaType = propertyTypes[i].getReturnedClass().getName();
-                    String propertyName = propertyNames[i];
+        Type[] propertyTypes = entityPersister.getPropertyTypes();
 
-                    IntrospectedColumn column = introspectedTable.getColumn(columnName);
-
-                    column.setJavaProperty(propertyName);
-                    column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(javaType));
-
-                    introspectedColumns.add(column);
-
-                }
-
-            }
-        }else{
-             Type[] propertyTypes = entityPersister.getPropertyTypes();
-            if (propertyTypes != null) {
+//        if(entityPersister.getEntityMetamodel().getIdentifierProperty().isEmbedded()){
+//            if (propertyTypes != null) {
+//                String[] propertyNames = entityPersister.getPropertyNames();
+//
+//                for (int i = 0, size = propertyNames.length; i < size; i++) {
+//                    String columnName = entityPersister.getPropertyColumnNames(propertyNames[i])[0];
+//                    String javaType = propertyTypes[i].getReturnedClass().getName();
+//                    String propertyName = propertyNames[i];
+//
+//                    IntrospectedColumn column = introspectedTable.getColumn(columnName);
+//
+//                    column.setJavaProperty(propertyName);
+//                    column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(javaType));
+//
+//                    introspectedColumns.add(column);
+//
+//                }
+//
+//            }
+//        }else{
+//             if (propertyTypes != null) {
                 for (int i = 0, size = propertyTypes.length; i < size; i++) {
                     Type type=propertyTypes[i];
                     if(type instanceof  ComponentType){
@@ -172,21 +116,37 @@ public class HbmPlugin extends PluginAdapter {
                         String[] propertyNames = componentType.getPropertyNames();
 
                         for (int j = 0; j < propertyNames.length; j++) {
-                            String columnName = entityPersister.getPropertyColumnNames(propertyNames[i])[0];
+                            String columnName = entityPersister.getPropertyColumnNames(propertyNames[j])[0];
 
                             IntrospectedColumn column = introspectedTable.getColumn(columnName);
-                            String propertyName = propertyNames[i];
+                            String propertyName = propertyNames[j];
                             column.setJavaProperty(propertyName);
-                            column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(componentType.getSubtypes()[i].getReturnedClass().getName()));
-                            IntrospectedTableUtils.setIdentifierPropertyfullKey(column, identifierPropertyName + "." + propertyName);
+                            column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(componentType.getSubtypes()[j].getReturnedClass().getName()));
+                            if(StringUtils.isNotBlank(identifierPropertyName)){
+                                IntrospectedTableUtils.setIdentifierPropertyfullKey(column, identifierPropertyName + "." + propertyName);
+
+                            }
 
                             introspectedColumns.add(column);
                         }
 
-                        String columnName = entityPersister.getPropertyColumnNames(propertyNames[i])[0];
+//                        String columnName = entityPersister.getPropertyColumnNames(propertyNames[i])[0];
+//
+//                        String javaType = componentType.getReturnedClass().getName();
+//                        String propertyName = propertyNames[i];
+//
+//                        IntrospectedColumn column = introspectedTable.getColumn(columnName);
+//
+//                        column.setJavaProperty(propertyName);
+//                        column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(javaType));
+//
+//                        introspectedColumns.add(column);
+                    }else if(type instanceof AbstractSingleColumnStandardBasicType){
+                        AbstractSingleColumnStandardBasicType standardBasicType=(AbstractSingleColumnStandardBasicType)type;
+                        String propertyName = entityPersister.getPropertyNames()[i];
 
-                        String javaType = componentType.getReturnedClass().getName();
-                        String propertyName = propertyNames[i];
+                        String columnName = entityPersister.getPropertyColumnNames(propertyName)[0];
+                        String javaType = propertyTypes[i].getReturnedClass().getName();
 
                         IntrospectedColumn column = introspectedTable.getColumn(columnName);
 
@@ -216,10 +176,10 @@ public class HbmPlugin extends PluginAdapter {
 //                        }
 //                    }
 
-
-                }
-
-            }
+//
+//                }
+//
+//            }
         }
 
         //只使用 Entity类返回的COlumn生成，其他清理掉
@@ -247,8 +207,7 @@ public class HbmPlugin extends PluginAdapter {
                 iterator.remove();
             }
         }
-         introspectedTable.addPrimaryKeyColumn(identifierPropertyName);
-         introspectedTable.setPrimaryKeyType(identifierType.getReturnedClass().getName());
+
 
 
     }
@@ -261,16 +220,46 @@ public class HbmPlugin extends PluginAdapter {
 
 
         if(entityPersister!=null){
-            IntrospectedColumn primaryKey=new IntrospectedColumn();
-            primaryKey.setJavaProperty(entityPersister.getIdentifierPropertyName());
-            primaryKey.setFullyQualifiedJavaType(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType() ));
-            primaryKey.setIdentity(true);
-            topLevelClass.addImportedType(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType()));
+            Class primaryKeyType =entityPersister.getIdentifierType().getReturnedClass();
 
-            topLevelClass.getFields().add(0,JavaBeansUtil.getJavaBeansField(primaryKey,context,introspectedTable));
-            topLevelClass.getMethods().add(0,        JavaBeansUtil.getJavaBeansSetter(primaryKey,context,introspectedTable));
-            topLevelClass.getMethods().add(0,      JavaBeansUtil.getJavaBeansGetter(primaryKey,context,introspectedTable));
-            topLevelClass.setSuperClass((FullyQualifiedJavaType)null);
+            if(StringUtils.isNotBlank( entityPersister.getIdentifierPropertyName())){
+                IntrospectedColumn primaryKey=new IntrospectedColumn();
+                primaryKey.setJavaProperty(entityPersister.getIdentifierPropertyName());
+                primaryKey.setFullyQualifiedJavaType(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType() ));
+                primaryKey.setIdentity(true);
+                topLevelClass.addImportedType(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType()));
+
+                topLevelClass.getFields().add(0,JavaBeansUtil.getJavaBeansField(primaryKey,context,introspectedTable));
+                topLevelClass.getMethods().add(0,        JavaBeansUtil.getJavaBeansSetter(primaryKey,context,introspectedTable));
+                topLevelClass.getMethods().add(0,      JavaBeansUtil.getJavaBeansGetter(primaryKey,context,introspectedTable));
+                FullyQualifiedJavaType supperClass=topLevelClass.getSuperClass();
+                if(primaryKeyType!=null&&supperClass!=null&&primaryKeyType.getName().equals(supperClass.getFullyQualifiedName())){
+                    topLevelClass.setSuperClass((FullyQualifiedJavaType)null);
+
+                }
+            }else {
+                if(!entityPersister.getType().getReturnedClass().isAssignableFrom(primaryKeyType)){
+                    List<IntrospectedColumn> primaryKeyColumns=   new ArrayList<>(introspectedTable.getPrimaryKeyColumns());
+                    Collections.reverse(primaryKeyColumns);
+                    for(IntrospectedColumn primaryKey :primaryKeyColumns){
+
+                        topLevelClass.addImportedType(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType()));
+
+                        topLevelClass.getFields().add(0,JavaBeansUtil.getJavaBeansField(primaryKey,context,introspectedTable));
+                        topLevelClass.getMethods().add(0,        JavaBeansUtil.getJavaBeansSetter(primaryKey,context,introspectedTable));
+                        topLevelClass.getMethods().add(0,      JavaBeansUtil.getJavaBeansGetter(primaryKey,context,introspectedTable));
+                        topLevelClass.setSuperClass((FullyQualifiedJavaType)null);
+                    }
+                }else{
+                    FullyQualifiedJavaType supperClass=topLevelClass.getSuperClass();
+                    if(primaryKeyType!=null&&supperClass!=null&&primaryKeyType.getName().equals(supperClass.getFullyQualifiedName())){
+                        topLevelClass.setSuperClass((FullyQualifiedJavaType)null);
+
+                    }
+                }
+
+            }
+
         }
 
         return super.modelBaseRecordClassGenerated(topLevelClass, introspectedTable);
@@ -278,8 +267,9 @@ public class HbmPlugin extends PluginAdapter {
 
     @Override
     public boolean sqlMapResultMapWithoutBLOBsElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
+        AbstractEntityPersister entityPersister = IntrospectedTableUtils.entityPersiter(introspectedTable);
 
-        if (IntrospectedTableUtils.isHbmIntrospectedTable(introspectedTable)) {
+        if (entityPersister!=null&&StringUtils.isNotBlank(entityPersister.getIdentifierPropertyName())) {
 
 
             XmlElement associationElement = new XmlElement("association"); //$NON-NLS-1$
