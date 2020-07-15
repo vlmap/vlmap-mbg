@@ -40,16 +40,16 @@
             <property name="suppressDate" value="true"></property>
         </commentGenerator>
 
+        <!--<jdbcConnection-->
+                <!--connectionURL="jdbc:mysql://127.0.0.1:3306/mybatis"-->
+                <!--driverClass="com.mysql.jdbc.Driver" password="root" userId="root">-->
+            <!--<property name="nullCatalogMeansCurrent" value="true"/>-->
+        <!--</jdbcConnection>-->
         <jdbcConnection
-                connectionURL="jdbc:mysql://127.0.0.1:3306/mybatis"
+                connectionURL="jdbc:mysql://172.18.70.50:3306/mybatis"
                 driverClass="com.mysql.jdbc.Driver" password="root" userId="root">
             <property name="nullCatalogMeansCurrent" value="true"/>
         </jdbcConnection>
-<!--        <jdbcConnection-->
-<!--                connectionURL="jdbc:mysql://172.18.70.50:3306/mybatis"-->
-<!--                driverClass="com.mysql.jdbc.Driver" password="root" userId="root">-->
-<!--            <property name="nullCatalogMeansCurrent" value="true"/>-->
-<!--        </jdbcConnection>-->
         <!--<javaTypeResolver type="com.github.vlmap.mybatis.generator.JavaTypeResolverJsr310Impl"/>-->
 
         <javaModelGenerator targetPackage="com.sample.entity"
@@ -89,7 +89,7 @@
 
 
         >
-            <columnRenamingRule searchString="^(s_|t_|n_)" replaceString=""/>
+             <columnRenamingRule searchString="^(s_|t_|n_)" replaceString=""/>
 
 
 
@@ -110,9 +110,7 @@
 
         </table>
 
-        <table
-                domainObjectName="DemoEntityTwo"
-
+        <table domainObjectName="DemoEntityTwo"
                 tableName="demo2"
 
 

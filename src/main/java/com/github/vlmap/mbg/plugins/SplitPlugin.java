@@ -197,6 +197,17 @@ public class SplitPlugin extends PluginAdapter {
 
             result.add(javaFile);
 
+	//删除符合Key文件
+            baseModelClass.setVisibility(JavaVisibility.PUBLIC);
+            baseModelClass.setAbstract(true);
+            javaFile = new GeneratedJavaFile(primaryKeyClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
+            file = Util.getTargetFile(javaFile);
+            if (file.exists()) {
+                System.out.println("Delete BaseModel JavaFile:" + file.toString());
+                file.delete();
+
+            }
+
 
         }
         Interface baseMapperInterface = this.getBaseMapperInterface(introspectedTable);
