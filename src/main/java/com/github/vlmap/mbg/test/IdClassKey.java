@@ -1,10 +1,9 @@
 package com.github.vlmap.mbg.test;
 
-import javax.persistence.*;
 import java.io.Serializable;
 
 
-public class DemoEntityKey implements Serializable {
+public class IdClassKey implements Serializable {
 
     String aa;
 

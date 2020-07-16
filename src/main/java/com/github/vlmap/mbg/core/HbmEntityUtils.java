@@ -70,6 +70,7 @@ public class HbmEntityUtils {
             entityManagerFactory = new EntityManagerFactoryBuilderImpl(descriptor
                     , properties).build();
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
 

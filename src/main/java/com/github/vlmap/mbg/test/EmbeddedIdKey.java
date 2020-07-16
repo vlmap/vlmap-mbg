@@ -5,7 +5,7 @@ import javax.persistence.Embeddable;
 import java.io.Serializable;
 
 @Embeddable
-public class Pk implements Serializable {
+public class EmbeddedIdKey implements Serializable {
 
     @Column(name = "a")
     String aa;

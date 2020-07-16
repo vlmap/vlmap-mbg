@@ -1,16 +1,28 @@
 package com.github.vlmap.mbg.core;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 
+import java.lang.reflect.Method;
+
 public class IntrospectedTableUtils {
     private final static String FULL_IDENTIFIER_PROPERTY = "___fullKey___";
+
 
     public static String  getHbmModelClass(IntrospectedTable introspectedTable){
         return  introspectedTable.getTableConfigurationProperty("model");
 
+    }
+
+    public static boolean createEntityFile(IntrospectedTable introspectedTable) {
+        String property = introspectedTable.getTableConfigurationProperty("entityJavaFile");
+        if (StringUtils.isBlank(property)) {
+            property = "false";
+        }
+        return BooleanUtils.toBoolean(property);
     }
     public static boolean isHbmIntrospectedTable(IntrospectedTable introspectedTable){
         return StringUtils.isNotBlank(getHbmModelClass(introspectedTable));
@@ -57,6 +69,31 @@ public class IntrospectedTableUtils {
 
     public static void setIdentifierPropertyfullKey( IntrospectedColumn column,String value){
         column.getProperties().setProperty(FULL_IDENTIFIER_PROPERTY, value);
+
+    }
+
+    public static void calculate(IntrospectedTable introspectedTable) {
+
+         invoker(IntrospectedTable.class,introspectedTable, "calculateJavaClientAttributes");
+        invoker(IntrospectedTable.class,introspectedTable, "calculateModelAttributes");
+        invoker(IntrospectedTable.class,introspectedTable, "calculateXmlAttributes");
+
+    }
+
+    protected static void invoker(Class clazz,Object object, String methodName) {
+        try {
+
+
+            Method method =  clazz.getDeclaredMethod(methodName);
+            if (method != null) {
+                method.setAccessible(true);
+                method.invoke(object);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 }

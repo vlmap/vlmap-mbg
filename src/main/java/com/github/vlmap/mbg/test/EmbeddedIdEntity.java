@@ -7,22 +7,22 @@ import javax.persistence.Table;
 import java.io.Serializable;
 
 @Entity
-@Table(name="demo",schema = "test")
-public class DemoEntity implements Serializable {
+@Table(name="hbm_tab_embedded")
+public class EmbeddedIdEntity implements Serializable {
     @EmbeddedId
-    private Pk id;
+    private EmbeddedIdKey id;
     @Column(name = "c")
 
     private String cc;
     @Column(name = "d")
 
-    private String dd="mmmmmm";
+    private String dd;
 
-    public  Pk getId() {
+    public EmbeddedIdKey getId() {
         return id;
     }
 
-    public void setId( Pk id) {
+    public void setId( EmbeddedIdKey id) {
         this.id = id;
     }
 

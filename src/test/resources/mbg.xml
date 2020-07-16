@@ -25,19 +25,21 @@
             <property name="type" value="com.github.vlmap.mbg.plugins.HbmPlugin"/>
 
         </plugin>
-        <!--这个插件应该最后加载-->
-        <plugin type="com.github.vlmap.mbg.plugins.SplitPlugin">
-            <property name="type" value="com.github.vlmap.mbg.plugins.SplitPlugin"/>
-            <!--指定抽象类所在的子包-->
-            <property name="basePackage" value="base"/>
-            <!--指定抽象类名称前缀-->
-            <property name="baseClassPrefix" value="Base"/>
-        </plugin>
+        <!--&lt;!&ndash;这个插件应该最后加载&ndash;&gt;-->
+        <!--<plugin type="com.github.vlmap.mbg.plugins.SplitPlugin">-->
+            <!--<property name="type" value="com.github.vlmap.mbg.plugins.SplitPlugin"/>-->
+            <!--&lt;!&ndash;指定抽象类所在的子包&ndash;&gt;-->
+            <!--<property name="basePackage" value="base"/>-->
+            <!--&lt;!&ndash;指定抽象类名称前缀&ndash;&gt;-->
+            <!--<property name="baseClassPrefix" value="Base"/>-->
+        <!--</plugin>-->
 
 
         <commentGenerator>
             <!--不使用时间戳代码注释-->
             <property name="suppressDate" value="true"></property>
+            <property name="suppressAllComments" value="true"/>
+
         </commentGenerator>
 
         <!--<jdbcConnection-->
@@ -90,35 +92,22 @@
 
         >
              <columnRenamingRule searchString="^(s_|t_|n_)" replaceString=""/>
-
-
-
-
         </table>
 
 
-        <table
-                domainObjectName="DemoEntity"
+        <table domainObjectName="EmbeddedIdEntity"  tableName="hbm_tab_embedded">
+            <property name="model" value="com.github.vlmap.mbg.test.EmbeddedIdEntity"/>
 
-                tableName="demo"
-
-
-
-        >
-            <property name="model" value="com.github.vlmap.mbg.test.DemoEntity"/>
-
-
+            <property name="entityJavaFile" value="true"/>
         </table>
 
-        <table domainObjectName="DemoEntityTwo"
-                tableName="demo2"
-
-
-
-        >
-            <property name="model" value="com.github.vlmap.mbg.test.DemoEntityTwo"/>
-
-
+        <table domainObjectName="IdClassEntity" tableName="hbm_tab_idclass" >
+            <property name="model" value="com.github.vlmap.mbg.test.IdClassEntity"/>
+            <property name="entityJavaFile" value="true"/>
+        </table>
+        <table domainObjectName="SampleEntity"         tableName="hbm_tab_sample" >
+            <property name="model" value="com.github.vlmap.mbg.test.SampleEntity"/>
+            <property name="entityJavaFile" value="true"/>
         </table>
     </context>
 </generatorConfiguration>

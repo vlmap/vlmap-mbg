@@ -4,25 +4,19 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity
-@Table(name="demo2",schema = "test")
-@IdClass(DemoEntityKey.class)
-public class DemoEntityTwo implements Serializable {
+@Table(name="hbm_tab_idclass")
+@IdClass(IdClassKey.class)
+public class IdClassEntity implements Serializable {
     @Id
     @Column(name = "a")
     String aa;
     @Id
     @Column(name = "b")
-
     String bb;
-
     @Column(name = "c")
-
     private String cc;
     @Column(name = "d")
-
-    private String dd="mmmmmm";
-
-
+    private String dd;
 
     public String getCc() {
         return cc;
