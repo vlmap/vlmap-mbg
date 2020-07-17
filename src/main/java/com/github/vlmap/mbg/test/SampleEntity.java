@@ -7,12 +7,14 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "hbm_tab_sample")
+
 public class SampleEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "a")
-    String aa;
+    Integer aa;
+
 
     @Column(name = "b")
     String bb;
@@ -37,11 +39,11 @@ public class SampleEntity implements Serializable {
         this.dd = dd;
     }
 
-    public String getAa() {
+    public Integer getAa() {
         return aa;
     }
 
-    public void setAa(String aa) {
+    public void setAa(Integer aa) {
         this.aa = aa;
     }
 

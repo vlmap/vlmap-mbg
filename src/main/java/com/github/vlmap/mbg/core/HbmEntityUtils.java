@@ -1,6 +1,8 @@
 package com.github.vlmap.mbg.core;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl;
 import org.hibernate.jpa.boot.internal.PersistenceUnitInfoDescriptor;
 import org.hibernate.metamodel.spi.MetamodelImplementor;
@@ -20,7 +22,7 @@ public class HbmEntityUtils {
         String dialect=   introspectedTable.getTableConfigurationProperty("hibernate.dialect");
 
 
-        EntityManagerFactory entityManagerFactory = null;
+        SessionFactoryImplementor entityManagerFactory = null;
         try {
             Class clazz = Class.forName(modelClass);
 
@@ -67,14 +69,16 @@ public class HbmEntityUtils {
                 }
             };
 
-            entityManagerFactory = new EntityManagerFactoryBuilderImpl(descriptor
-                    , properties).build();
+            entityManagerFactory = (SessionFactoryImplementor)new EntityManagerFactoryBuilderImpl(descriptor, properties).build();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
 
-        MetamodelImplementor metamodelImplementor = (MetamodelImplementor) entityManagerFactory.getMetamodel();
-        return (AbstractEntityPersister) metamodelImplementor.entityPersister(modelClass);
+        introspectedTable.setAttribute("sessionFactoryImplementor",entityManagerFactory);
+
+        return (AbstractEntityPersister) entityManagerFactory.getMetamodel().entityPersister(modelClass);
     }
+
+
 }

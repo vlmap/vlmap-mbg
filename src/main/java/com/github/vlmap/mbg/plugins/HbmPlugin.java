@@ -5,6 +5,12 @@ import com.github.vlmap.mbg.core.HbmEntityUtils;
 import com.github.vlmap.mbg.core.IdentityDelegatingIntrospectedTable;
 import com.github.vlmap.mbg.core.IntrospectedTableUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.id.IdentifierGenerator;
+import org.hibernate.id.IdentityGenerator;
+import org.hibernate.id.enhanced.SequenceStyleGenerator;
+import org.hibernate.id.enhanced.TableGenerator;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.hibernate.type.AbstractSingleColumnStandardBasicType;
 import org.hibernate.type.ComponentType;
@@ -17,17 +23,21 @@ import org.mybatis.generator.api.dom.xml.Element;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 import org.mybatis.generator.codegen.mybatis3.xmlmapper.elements.*;
 import org.mybatis.generator.config.Context;
+import org.mybatis.generator.config.GeneratedKey;
 import org.mybatis.generator.internal.PluginAggregator;
 import org.mybatis.generator.internal.util.JavaBeansUtil;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 
 /**
+ *
+ *
+ *
+ *
+ *
+ *
  * mgb生成内容和自定义内容分离,该插件应该被最后被加载
  *
  * @author vlmap
@@ -83,11 +93,51 @@ public class HbmPlugin extends PluginAdapter {
 
         AbstractEntityPersister entityPersister = HbmEntityUtils.entityPersister(introspectedTable);
 
-
+        SessionFactoryImplementor entityManagerFactory = (SessionFactoryImplementor) introspectedTable.getAttribute("sessionFactoryImplementor");
         IntrospectedTableUtils.entityPersiter(introspectedTable, entityPersister);
+        Dialect dialect = entityManagerFactory.getJdbcServices().getDialect();
+        IdentifierGenerator identifierGenerator = entityPersister.getIdentifierGenerator();
+        //处理主键生成策略
+        if (identifierGenerator instanceof SequenceStyleGenerator) {
+            SequenceStyleGenerator generator = (SequenceStyleGenerator) identifierGenerator;
+
+            String select = dialect.getSequenceNextValString(Objects.toString(generator.generatorKey()));
+            GeneratedKey generatedKey = introspectedTable.getTableConfiguration().getGeneratedKey();
+            GeneratedKey key = null;
+            if (generatedKey != null) {
+                key = new GeneratedKey(entityPersister.getIdentifierColumnNames()[0], select, true, null);
+            } else {
+                key = new GeneratedKey(generatedKey.getColumn(), select, generatedKey.isIdentity(), generatedKey.getType());
+            }
+
+            introspectedTable.getTableConfiguration().setGeneratedKey(key);
+        } else if (identifierGenerator instanceof IdentityGenerator) {
+
+
+            String select = entityPersister.getIdentitySelectString();
+            GeneratedKey generatedKey = introspectedTable.getTableConfiguration().getGeneratedKey();
+
+            GeneratedKey key = null;
+            if (generatedKey == null) {
+                key = new GeneratedKey(entityPersister.getIdentifierColumnNames()[0], select, true, null);
+            } else {
+                key = new GeneratedKey(generatedKey.getColumn(), select, generatedKey.isIdentity(), generatedKey.getType());
+            }
+
+            introspectedTable.getTableConfiguration().setGeneratedKey(key);
+        } else if (identifierGenerator instanceof TableGenerator) {
+            if (!IntrospectedTableUtils.isIgnoreTableGenerator(introspectedTable)) {
+                throw new IllegalArgumentException("不支持 Hibernate 生成策略为 GenerationType.TABLE的主键转换");
+            }
+
+        }
         Type identifierType = entityPersister.getIdentifierType();
+
+
         List<IntrospectedColumn> introspectedColumns = new ArrayList<>();
+
         if(identifierType!=null){
+
             String identifierPropertyName = entityPersister.getIdentifierPropertyName();
 
             calculateIntrospectedColumn(introspectedTable,entityPersister,identifierType,identifierPropertyName,introspectedColumns);

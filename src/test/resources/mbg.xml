@@ -106,8 +106,15 @@
             <property name="entityJavaFile" value="true"/>
         </table>
         <table domainObjectName="SampleEntity"         tableName="hbm_tab_sample" >
+            <!--指定Hibernate用@Entity注解的Bean,bean在classpath中要能加载到-->
             <property name="model" value="com.github.vlmap.mbg.test.SampleEntity"/>
+            <!--是否在Model目录生成Model对应的类-->
             <property name="entityJavaFile" value="true"/>
+            <!--忽略GenerationType.TABLE类型主键生成器转换-->
+            <property name="ignoreTableGenerator" value="true"/>
+            <!---->
+            <!--<property name="hibernate.dialect" value="org.hibernate.dialect.Oracle10gDialect"/>-->
+
         </table>
     </context>
 </generatorConfiguration>

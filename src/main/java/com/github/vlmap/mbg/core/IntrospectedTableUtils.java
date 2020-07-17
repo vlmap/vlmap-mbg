@@ -2,6 +2,7 @@ package com.github.vlmap.mbg.core;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
@@ -16,7 +17,14 @@ public class IntrospectedTableUtils {
         return  introspectedTable.getTableConfigurationProperty("model");
 
     }
+    public static boolean isIgnoreTableGenerator(IntrospectedTable introspectedTable) {
+        String property =     introspectedTable.getTableConfiguration().getProperty("ignoreTableGenerator");
 
+        if (StringUtils.isBlank(property)) {
+            property = "false";
+        }
+        return BooleanUtils.toBoolean(property);
+    }
     public static boolean createEntityFile(IntrospectedTable introspectedTable) {
         String property = introspectedTable.getTableConfigurationProperty("entityJavaFile");
         if (StringUtils.isBlank(property)) {
@@ -31,9 +39,11 @@ public class IntrospectedTableUtils {
     public static AbstractEntityPersister entityPersiter(IntrospectedTable introspectedTable){
         return (AbstractEntityPersister)introspectedTable.getAttribute("entityPersister");
     }
-    public static void entityPersiter(IntrospectedTable introspectedTable,AbstractEntityPersister entityPersister){
+    public static void entityPersiter(IntrospectedTable introspectedTable, AbstractEntityPersister entityPersister){
         introspectedTable.setAttribute("entityPersister", entityPersister);
     }
+
+
 
     public static  IntrospectedColumn withIdentityIntrospectedColumn(IntrospectedColumn introspectedColumn) {
         String property = introspectedColumn.getProperties().getProperty(FULL_IDENTIFIER_PROPERTY);
