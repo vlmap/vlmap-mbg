@@ -4,7 +4,7 @@ import com.github.vlmap.mbg.core.DelegatingIntrospectedTable;
 import com.github.vlmap.mbg.core.HbmEntityUtils;
 import com.github.vlmap.mbg.core.IdentityDelegatingIntrospectedTable;
 import com.github.vlmap.mbg.core.IntrospectedTableUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.id.IdentifierGenerator;
@@ -24,6 +24,7 @@ import org.mybatis.generator.api.dom.xml.XmlElement;
 import org.mybatis.generator.codegen.mybatis3.xmlmapper.elements.*;
 import org.mybatis.generator.config.Context;
 import org.mybatis.generator.config.GeneratedKey;
+import org.mybatis.generator.config.PropertyRegistry;
 import org.mybatis.generator.internal.PluginAggregator;
 import org.mybatis.generator.internal.util.JavaBeansUtil;
 
@@ -50,53 +51,12 @@ public class HbmPlugin extends PluginAdapter {
         return true;
     }
 
-
-    protected void calculateIntrospectedColumn(IntrospectedTable introspectedTable, AbstractEntityPersister entityPersister, Type identifierType,String propertyName, List<IntrospectedColumn> collect){
-        //普通主键、单列对象
-        if (identifierType instanceof AbstractSingleColumnStandardBasicType) {
-
-            String columnName = entityPersister.getPropertyColumnNames(propertyName)[0];
-            String javaType = identifierType.getReturnedClass().getName();
-
-            IntrospectedColumn column = introspectedTable.getColumn(columnName);
-
-            column.setJavaProperty(propertyName);
-            column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(javaType));
-
-            collect.add(column);
-        }
-        //复合主键、复合对象
-        if (identifierType instanceof ComponentType) {
-            String[] identifierColumnNames = entityPersister.getIdentifierColumnNames();
-            ComponentType componentType = (ComponentType) identifierType;
-            String[] propertyNames = componentType.getPropertyNames();
-            for (int i = 0; i < propertyNames.length; i++) {
-                IntrospectedColumn column = introspectedTable.getColumn(identifierColumnNames[i]);
-
-                column.setJavaProperty( propertyNames[i]);
-                column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(componentType.getSubtypes()[i].getReturnedClass().getName()));
-                IntrospectedTableUtils.setIdentifierPropertyfullKey(column, propertyName + "." +  propertyNames[i]);
-
-                collect.add(column);
-            }
-//            introspectedTable.addPrimaryKeyColumn(identifierPropertyName);
-
-        }
-    }
-
-    @Override
-    public void initialized(IntrospectedTable introspectedTable) {
-
-
-        if (!IntrospectedTableUtils.isHbmIntrospectedTable(introspectedTable)) return;
-
-
-        AbstractEntityPersister entityPersister = HbmEntityUtils.entityPersister(introspectedTable);
-
+    protected void calculateIdentifierGenerator(IntrospectedTable introspectedTable, AbstractEntityPersister entityPersister) {
         SessionFactoryImplementor entityManagerFactory = (SessionFactoryImplementor) introspectedTable.getAttribute("sessionFactoryImplementor");
-        IntrospectedTableUtils.entityPersiter(introspectedTable, entityPersister);
+
         Dialect dialect = entityManagerFactory.getJdbcServices().getDialect();
         IdentifierGenerator identifierGenerator = entityPersister.getIdentifierGenerator();
+
         //处理主键生成策略
         if (identifierGenerator instanceof SequenceStyleGenerator) {
             SequenceStyleGenerator generator = (SequenceStyleGenerator) identifierGenerator;
@@ -105,9 +65,11 @@ public class HbmPlugin extends PluginAdapter {
             GeneratedKey generatedKey = introspectedTable.getTableConfiguration().getGeneratedKey();
             GeneratedKey key = null;
             if (generatedKey != null) {
-                key = new GeneratedKey(entityPersister.getIdentifierColumnNames()[0], select, true, null);
-            } else {
                 key = new GeneratedKey(generatedKey.getColumn(), select, generatedKey.isIdentity(), generatedKey.getType());
+
+            } else {
+                key = new GeneratedKey(entityPersister.getIdentifierColumnNames()[0], select, false, null);
+
             }
 
             introspectedTable.getTableConfiguration().setGeneratedKey(key);
@@ -131,67 +93,128 @@ public class HbmPlugin extends PluginAdapter {
             }
 
         }
-        Type identifierType = entityPersister.getIdentifierType();
 
+    }
+    protected void calculateIntrospectedColumn(IntrospectedTable introspectedTable, AbstractEntityPersister entityPersister, Type identifierType,String propertyName, List<IntrospectedColumn> collect){
+        //普通主键、单列对象
+        if (identifierType instanceof AbstractSingleColumnStandardBasicType) {
 
-        List<IntrospectedColumn> introspectedColumns = new ArrayList<>();
+            String columnName = entityPersister.getPropertyColumnNames(propertyName)[0];
+            String javaType = identifierType.getReturnedClass().getName();
 
-        if(identifierType!=null){
+            IntrospectedColumn column = introspectedTable.getColumn(columnName);
+            if (column == null) {
+                String msg = String.format("Schema[%s] Table[%s] Column[%s] not exist ,please check class[%s] field[%s]",
+                        ObjectUtils.toString(introspectedTable.getTableConfiguration().getSchema()),
+                        introspectedTable.getTableConfiguration().getTableName(),
+                        columnName,
+                        entityPersister.getEntityName(),
+                        propertyName);
+                throw new IllegalArgumentException(msg);
 
-            String identifierPropertyName = entityPersister.getIdentifierPropertyName();
-
-            calculateIntrospectedColumn(introspectedTable,entityPersister,identifierType,identifierPropertyName,introspectedColumns);
-            if (identifierType instanceof ComponentType) {
-                introspectedTable.addPrimaryKeyColumn(identifierPropertyName);
             }
+            column.setJavaProperty(propertyName);
+            column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(javaType));
+
+            collect.add(column);
         }
-
-
-
-        Type[] propertyTypes = entityPersister.getPropertyTypes();
-
-        for (int i = 0, size = propertyTypes.length; i < size; i++) {
-            calculateIntrospectedColumn(introspectedTable,entityPersister, propertyTypes[i],entityPersister.getPropertyNames()[i],introspectedColumns);
-        }
-
-        //只使用 Entity类返回的COlumn生成，其他清理掉
-        Iterator<IntrospectedColumn> iterator = introspectedTable.getBaseColumns().iterator();
-
-        while (iterator.hasNext()) {
-            IntrospectedColumn next = iterator.next();
-            if (!introspectedColumns.contains(next)) {
-                iterator.remove();
-            }
-        }
-        iterator = introspectedTable.getBLOBColumns().iterator();
-
-        while (iterator.hasNext()) {
-            IntrospectedColumn next = iterator.next();
-            if (!introspectedColumns.contains(next)) {
-                iterator.remove();
-            }
-        }
-        iterator = introspectedTable.getPrimaryKeyColumns().iterator();
-
-        while (iterator.hasNext()) {
-            IntrospectedColumn next = iterator.next();
-            if (!introspectedColumns.contains(next)) {
-                iterator.remove();
-            }
-        }
-
-        IntrospectedTableUtils.calculate(introspectedTable);
-        String modelClass = IntrospectedTableUtils.getHbmModelClass(introspectedTable);
-
-        introspectedTable.setBaseRecordType(modelClass);
-
+        //复合主键、复合对象
         if (identifierType instanceof ComponentType) {
-            introspectedTable.setPrimaryKeyType(identifierType.getReturnedClass().getName());
+            String[] identifierColumnNames = entityPersister.getIdentifierColumnNames();
+            ComponentType componentType = (ComponentType) identifierType;
+            String[] propertyNames = componentType.getPropertyNames();
+            for (int i = 0; i < propertyNames.length; i++) {
+                String columnName = identifierColumnNames[i];
+                IntrospectedColumn column = introspectedTable.getColumn(columnName);
+                if (column == null) {
+                    String msg = String.format("Schema[%s] Table[%s] Column[%s] not exist ,please check class[%s] field[%s]",
+                            ObjectUtils.toString(introspectedTable.getTableConfiguration().getSchema()),
+                            introspectedTable.getTableConfiguration().getTableName(),
+                            columnName,
+                            entityPersister.getEntityName(),
+                            propertyName);
+                    throw new IllegalArgumentException(msg);
 
+                }
+                column.setJavaProperty( propertyNames[i]);
+                column.setFullyQualifiedJavaType(new FullyQualifiedJavaType(componentType.getSubtypes()[i].getReturnedClass().getName()));
+                if (!componentType.isEmbedded()) {
+                    IntrospectedTableUtils.setIdentifierPropertyfullKey(column, propertyName + "." + propertyNames[i]);
+                }
+
+
+                collect.add(column);
+            }
+//            introspectedTable.addPrimaryKeyColumn(identifierPropertyName);
 
         }
+    }
+
+    @Override
+    public void initialized(IntrospectedTable introspectedTable) {
 
 
+        if (!IntrospectedTableUtils.isHbmIntrospectedTable(introspectedTable)) return;
+
+        try {
+
+
+            AbstractEntityPersister entityPersister = HbmEntityUtils.entityPersister(introspectedTable);
+
+
+            IntrospectedTableUtils.entityPersiter(introspectedTable, entityPersister);
+
+            Type identifierType = entityPersister.getIdentifierType();
+
+
+            List<IntrospectedColumn> introspectedColumns = new ArrayList<>();
+
+            if (identifierType != null) {
+
+                String identifierPropertyName = entityPersister.getIdentifierPropertyName();
+
+                calculateIntrospectedColumn(introspectedTable, entityPersister, identifierType, identifierPropertyName, introspectedColumns);
+                if (identifierType instanceof ComponentType) {
+                    introspectedTable.addPrimaryKeyColumn(identifierPropertyName);
+                }
+            }
+
+
+            Type[] propertyTypes = entityPersister.getPropertyTypes();
+
+            for (int i = 0, size = propertyTypes.length; i < size; i++) {
+                calculateIntrospectedColumn(introspectedTable, entityPersister, propertyTypes[i], entityPersister.getPropertyNames()[i], introspectedColumns);
+            }
+            //计算主键生成策略
+            calculateIdentifierGenerator(introspectedTable, entityPersister);
+
+
+//            //只使用 Entity类返回的Column生成和privaryKey，其他清理掉
+            Iterator<IntrospectedColumn> iterator = introspectedTable.getNonPrimaryKeyColumns().iterator();
+
+            while (iterator.hasNext()) {
+                IntrospectedColumn next = iterator.next();
+                if (!introspectedColumns.contains(next)) {
+                    iterator.remove();
+                }
+            }
+
+            IntrospectedTableUtils.calculate(introspectedTable);
+            String modelClass = IntrospectedTableUtils.getHbmModelClass(introspectedTable);
+
+            introspectedTable.setBaseRecordType(modelClass);
+
+            if (identifierType instanceof ComponentType) {
+                introspectedTable.setPrimaryKeyType(identifierType.getReturnedClass().getName());
+
+
+            }
+        } catch (Exception e) {
+            String modelClass = IntrospectedTableUtils.getHbmModelClass(introspectedTable);
+            System.out.println("modelClass:" + modelClass + ",parse error");
+            throw new IllegalArgumentException(e);
+
+        }
     }
 
 
@@ -215,13 +238,24 @@ public class HbmPlugin extends PluginAdapter {
             AbstractEntityPersister entityPersister = IntrospectedTableUtils.entityPersiter(introspectedTable);
 
 
-            if (entityPersister != null) {
-                Type identifierType = entityPersister.getIdentifierType();
+            Type identifierType = entityPersister.getIdentifierType();
                 //复合主键、复合对象
                 if (identifierType instanceof ComponentType) {
-                    Class primaryKeyType = identifierType.getReturnedClass();
+                    ComponentType componentType = (ComponentType) identifierType;
+                    if (componentType.isEmbedded()) {
+                        //@Idclass
+                        List<IntrospectedColumn> primaryKeyColumns = new ArrayList<>(introspectedTable.getPrimaryKeyColumns());
+                        Collections.reverse(primaryKeyColumns);
+                        for (IntrospectedColumn primaryKey : primaryKeyColumns) {
 
-                    if (StringUtils.isNotBlank(entityPersister.getIdentifierPropertyName())) {
+                            topLevelClass.addImportedType(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType()));
+
+                            topLevelClass.getFields().add(0, JavaBeansUtil.getJavaBeansField(primaryKey, context, introspectedTable));
+                            topLevelClass.getMethods().add(0, JavaBeansUtil.getJavaBeansSetter(primaryKey, context, introspectedTable));
+                            topLevelClass.getMethods().add(0, JavaBeansUtil.getJavaBeansGetter(primaryKey, context, introspectedTable));
+                        }
+                    } else {
+                        //@EmbeddedId
                         IntrospectedColumn primaryKey = new IntrospectedColumn();
                         primaryKey.setJavaProperty(entityPersister.getIdentifierPropertyName());
                         primaryKey.setFullyQualifiedJavaType(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType()));
@@ -231,38 +265,29 @@ public class HbmPlugin extends PluginAdapter {
                         topLevelClass.getFields().add(0, JavaBeansUtil.getJavaBeansField(primaryKey, context, introspectedTable));
                         topLevelClass.getMethods().add(0, JavaBeansUtil.getJavaBeansSetter(primaryKey, context, introspectedTable));
                         topLevelClass.getMethods().add(0, JavaBeansUtil.getJavaBeansGetter(primaryKey, context, introspectedTable));
-                        FullyQualifiedJavaType supperClass = topLevelClass.getSuperClass();
-                        if (primaryKeyType != null && supperClass != null && primaryKeyType.getName().equals(supperClass.getFullyQualifiedName())) {
-                            topLevelClass.setSuperClass((FullyQualifiedJavaType) null);
-
-                        }
-                    } else {
-                        if (!entityPersister.getType().getReturnedClass().isAssignableFrom(primaryKeyType)) {
-                            List<IntrospectedColumn> primaryKeyColumns = new ArrayList<>(introspectedTable.getPrimaryKeyColumns());
-                            Collections.reverse(primaryKeyColumns);
-                            for (IntrospectedColumn primaryKey : primaryKeyColumns) {
-
-                                topLevelClass.addImportedType(new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType()));
-
-                                topLevelClass.getFields().add(0, JavaBeansUtil.getJavaBeansField(primaryKey, context, introspectedTable));
-                                topLevelClass.getMethods().add(0, JavaBeansUtil.getJavaBeansSetter(primaryKey, context, introspectedTable));
-                                topLevelClass.getMethods().add(0, JavaBeansUtil.getJavaBeansGetter(primaryKey, context, introspectedTable));
-                                topLevelClass.setSuperClass((FullyQualifiedJavaType) null);
-                            }
-                        } else {
-                            FullyQualifiedJavaType supperClass = topLevelClass.getSuperClass();
-                            if (primaryKeyType != null && supperClass != null && primaryKeyType.getName().equals(supperClass.getFullyQualifiedName())) {
-                                topLevelClass.setSuperClass((FullyQualifiedJavaType) null);
-
-                            }
-                        }
-
                     }
 
+
                 }
+            Class clazz = entityPersister.getMappedClass();
 
+            Class superClass = clazz.getSuperclass();
+            topLevelClass.setSuperClass((FullyQualifiedJavaType) null);
+            if (!Object.class.equals(superClass)) {
+                FullyQualifiedJavaType type = new FullyQualifiedJavaType(superClass.getName());
+                topLevelClass.addImportedType(type);
+                topLevelClass.setSuperClass(type);
             }
+            Class[] interfaces = clazz.getInterfaces();
 
+            topLevelClass.getSuperInterfaceTypes().clear();
+            if (interfaces != null) {
+                for (Class interfaceClass : interfaces) {
+                    FullyQualifiedJavaType type = new FullyQualifiedJavaType(interfaceClass.getName());
+                    topLevelClass.addImportedType(type);
+                    topLevelClass.addSuperInterface(type);
+                }
+            }
         }
 
         return super.modelBaseRecordClassGenerated(topLevelClass, introspectedTable);
@@ -272,49 +297,74 @@ public class HbmPlugin extends PluginAdapter {
     public boolean sqlMapResultMapWithoutBLOBsElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
         AbstractEntityPersister entityPersister = IntrospectedTableUtils.entityPersiter(introspectedTable);
 
-        if (entityPersister != null && StringUtils.isNotBlank(entityPersister.getIdentifierPropertyName())) {
+        if (entityPersister != null) {
+            Type identifierType = entityPersister.getIdentifierType();
 
 
-            XmlElement associationElement = new XmlElement("association"); //$NON-NLS-1$
+            if (identifierType instanceof ComponentType) {
+                ComponentType type=(ComponentType)identifierType;
+                if(!type.isEmbedded()){
+                    XmlElement associationElement = new XmlElement("association"); //$NON-NLS-1$
 
 
-            associationElement.addAttribute(new Attribute(
-                    "property", "id")); //$NON-NLS-1$
-            associationElement.addAttribute(new Attribute(
-                    "javaType", introspectedTable.getPrimaryKeyType())); //$NON-NLS-1$
+                    associationElement.addAttribute(new Attribute(
+                            "property", "id")); //$NON-NLS-1$
+                    associationElement.addAttribute(new Attribute(
+                            "javaType", introspectedTable.getPrimaryKeyType())); //$NON-NLS-1$
 
 
-            List<Element> elements = element.getElements();
-            if (elements != null) {
-                Iterator<Element> iterator = elements.iterator();
-                while (iterator.hasNext()) {
+                    List<Element> elements = element.getElements();
+                    if (elements != null) {
+                        Iterator<Element> iterator = elements.iterator();
+                        while (iterator.hasNext()) {
 
-                    Element next = iterator.next();
-                    if (next instanceof XmlElement) {
-                        XmlElement xml = (XmlElement) next;
-                        if ("id".equals(xml.getName())) {
-                            associationElement.addElement(xml);
-                            iterator.remove();
+                            Element next = iterator.next();
+                            if (next instanceof XmlElement) {
+                                XmlElement xml = (XmlElement) next;
+                                if ("id".equals(xml.getName())) {
+                                    XmlElement object=new XmlElement(xml);
+                                    associationElement.addElement(object);
+
+                                    Attribute attribute=  getAttribute(xml,"property");
+                                    if(attribute!=null){
+                                        xml.getAttributes().remove(attribute);
+                                    }
+
+
+//                                    iterator.remove();
+                                }
+                            }
+                        }
+
+                    }
+                    for (int i = elements.size() - 1; i > -1; i--) {
+                        Element e = elements.get(i);
+                        if (e instanceof XmlElement) {
+                            XmlElement node = (XmlElement) e;
+                            String name = node.getName();
+                            if ("result".equals(name) || "id".equals(name) || "constructor".equals(name)) {
+                                elements.add(i + 1, associationElement);
+                                break;
+                            }
                         }
                     }
                 }
 
-            }
-            for (int i = elements.size() - 1; i > -1; i--) {
-                Element e = elements.get(i);
-                if (e instanceof XmlElement) {
-                    XmlElement node = (XmlElement) e;
-                    String name = node.getName();
-                    if ("result".equals(name) || "id".equals(name) || "constructor".equals(name)) {
-                        elements.add(i + 1, associationElement);
-                        break;
-                    }
-                }
+
             }
 
 
         }
         return super.sqlMapResultMapWithoutBLOBsElementGenerated(element, introspectedTable);
+    }
+
+    private Attribute getAttribute(XmlElement xml,String name){
+        for(Attribute attribute:xml.getAttributes()){
+            if(name.equals(attribute.getName())){
+                return attribute;
+            }
+        }
+return null;
     }
 
     @Override
@@ -356,13 +406,6 @@ public class HbmPlugin extends PluginAdapter {
             if (!create) {
                 return false;
             }
-            GeneratedJavaFile javaFile = new GeneratedJavaFile(topLevelClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
-            File file = SplitPlugin.Util.getTargetFile(javaFile);
-            if (file.exists()) {
-                System.out.println("Delete  JavaFile:" + file.toString());
-                file.delete();
-
-            }
 
         }
 
@@ -372,14 +415,24 @@ public class HbmPlugin extends PluginAdapter {
     protected void generatedWithIdentityIntrospectedColumn(XmlElement element, AbstractXmlElementGenerator generator, IntrospectedTable introspectedTable) {
 
         DelegatingIntrospectedTable delegating = new IdentityDelegatingIntrospectedTable(introspectedTable.getTargetRuntime(), introspectedTable);
-        generator.setContext(new Context(null) {
+        Context context = new Context(null) {
             PluginAggregator pluginAggregator = new PluginAggregator();
 
             @Override
             public Plugin getPlugins() {
                 return pluginAggregator;
             }
-        });
+        };
+//        context.getCommentGeneratorConfiguration().
+        Properties properties = new Properties();
+        properties.setProperty(PropertyRegistry.COMMENT_GENERATOR_SUPPRESS_DATE, "false");
+        properties.setProperty(PropertyRegistry.COMMENT_GENERATOR_SUPPRESS_ALL_COMMENTS, "true");
+        properties.setProperty(PropertyRegistry.COMMENT_GENERATOR_ADD_REMARK_COMMENTS, "false");
+
+        context.getCommentGenerator().addConfigurationProperties(properties);
+
+
+        generator.setContext(context);
         generator.setIntrospectedTable(delegating);
 
         XmlElement parent = new XmlElement("parent");

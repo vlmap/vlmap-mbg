@@ -2,10 +2,7 @@ package com.github.vlmap.mbg.plugins;
 
 import com.github.vlmap.mbg.core.IntrospectedTableUtils;
 import org.mybatis.generator.api.*;
-import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
-import org.mybatis.generator.api.dom.java.Interface;
-import org.mybatis.generator.api.dom.java.JavaVisibility;
-import org.mybatis.generator.api.dom.java.TopLevelClass;
+import org.mybatis.generator.api.dom.java.*;
 import org.mybatis.generator.api.dom.xml.*;
 import org.mybatis.generator.codegen.XmlConstants;
 import org.mybatis.generator.config.PropertyRegistry;
@@ -103,7 +100,17 @@ public class SplitPlugin extends PluginAdapter {
         return result;
 
     }
-
+//    protected Interface getBaseMapperRepositoryInterface(IntrospectedTable introspectedTable) {
+//
+//        String key = "BaseMapperRepositoryInterface";
+//        Interface result = (Interface) introspectedTable.getAttribute(key);
+//        if (result == null) {
+//            result = new Interface(new FullyQualifiedJavaType(new FullyQualifiedJavaType(introspectedTable.getMyBatis3JavaMapperType()).getPackageName() + baseName(basePackage, baseClassPrefix) + "Repository"));
+//            introspectedTable.setAttribute(key, result);
+//        }
+//        return result;
+//
+//    }
     protected XmlElement getBaseMapperXml(IntrospectedTable introspectedTable) {
         String key = "BaseMapperXml";
         XmlElement result = (XmlElement) introspectedTable.getAttribute(key);
@@ -113,6 +120,9 @@ public class SplitPlugin extends PluginAdapter {
         }
         return result;
     }
+
+
+
 
     /**
      * 生成Model类
@@ -165,7 +175,29 @@ public class SplitPlugin extends PluginAdapter {
 
     }
 
+    @Override
+    public boolean modelPrimaryKeyClassGenerated(TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
+        GeneratedJavaFile javaFile = new GeneratedJavaFile(topLevelClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
+        File file = SplitPlugin.Util.getTargetFile(javaFile);
+        if (file.exists()) {
+            System.out.println("Delete  JavaFile:" + file.toString());
+            file.delete();
 
+        }
+
+        return super.modelPrimaryKeyClassGenerated(topLevelClass, introspectedTable);
+    }
+    @Override
+    public boolean providerGenerated(TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
+        GeneratedJavaFile javaFile = new GeneratedJavaFile(topLevelClass, context.getJavaModelGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
+        File file = SplitPlugin.Util.getTargetFile(javaFile);
+        if (file.exists()) {
+            System.out.println("Delete  JavaFile:" + file.toString());
+            file.delete();
+
+        }
+        return super.providerGenerated(topLevelClass, introspectedTable);
+    }
     /**
      * 生成 Model.java 文件
      *
@@ -210,6 +242,9 @@ public class SplitPlugin extends PluginAdapter {
 
 
         }
+
+
+
         Interface baseMapperInterface = this.getBaseMapperInterface(introspectedTable);
 
         baseMapperInterface.setVisibility(JavaVisibility.PUBLIC);
@@ -223,6 +258,19 @@ public class SplitPlugin extends PluginAdapter {
             file.delete();
         }
         result.add(javaFile);
+
+//
+//        Interface baseMapperRepositoryInterface = this.getBaseMapperRepositoryInterface(introspectedTable);
+//
+//        javaFile = new GeneratedJavaFile(baseMapperRepositoryInterface, context.getJavaClientGeneratorConfiguration().getTargetProject(), context.getProperty("javaFileEncoding"), context.getJavaFormatter());
+//        file = Util.getTargetFile(javaFile);
+//        if (file.exists()) {
+//            System.out.println("Delete BaseMapperRepository JavaFile:" + file.toString());
+//
+//            file.delete();
+//        }
+//        result.add(javaFile);
+
         return result;
     }
 
@@ -250,10 +298,40 @@ public class SplitPlugin extends PluginAdapter {
         Iterator<Element> iterator = root.getElements().iterator();
 
         while (iterator.hasNext()) {
-            XmlElement element = (XmlElement) iterator.next();
+            Element element =   iterator.next();
             baseMapperXml.addElement(element);
             iterator.remove();
         }
+//  <resultMap id="BaseResultMap" type="com.github.vlmap.mbg.test.EmbeddedIdEntity"
+//               extends="com.sample.mapper.base.BaseEmbeddedIdEntityMapper.BaseResultMap"/>
+//    <sql id="Base_Column_List">
+//        <include refid="com.sample.mapper.base.BaseEmbeddedIdEntityMapper.Base_Column_List"/>
+//    </sql>
+
+        Interface baseMapperClass = this.getBaseMapperInterface(introspectedTable);
+        String namespace=baseMapperClass.getType().getFullyQualifiedNameWithoutTypeParameters();
+
+         XmlElement resultMap = new XmlElement("resultMap"); //$NON-NLS-1$
+        resultMap.addAttribute(new Attribute("id",            introspectedTable.getBaseResultMapId()));
+
+        String returnType=introspectedTable.getBaseRecordType();
+
+        resultMap.addAttribute(new Attribute("type",                  returnType));
+        resultMap.addAttribute(new Attribute("extends",                 namespace+"."+introspectedTable.getBaseResultMapId()));
+
+
+
+        document.getRootElement().addElement(resultMap);
+
+        XmlElement sql = new XmlElement("sql"); //$NON-NLS-1$
+        sql.addAttribute(new Attribute("id",            introspectedTable.getBaseColumnListId()));
+
+        XmlElement include = new XmlElement("include");
+        include.addAttribute(new Attribute("refid",namespace +"."+introspectedTable.getBaseColumnListId()));
+        sql.addElement(include);
+
+
+        document.getRootElement().addElement(sql);
 
 
         document.getRootElement().addElement(new TextElement("<!--******自定义类容可以写在这，重复生成不会被覆盖******-->"));
@@ -330,9 +408,30 @@ public class SplitPlugin extends PluginAdapter {
      */
     @Override
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
-
+//        if(!"true".equalsIgnoreCase(getContext().getProperty("__Repository__"))){
+//            Interface repositoryClass    =    getBaseMapperRepositoryInterface(introspectedTable);
+//
+//
+//            for(Optation method:interfaze.getMethods()){
+//                FullyQualifiedJavaType returnType=method.getReturnType();
+//
+//                repositoryClass.getMethods().add(method);
+//            }
+//            repositoryClass.getMethods().addAll(interfaze.getMethods());
+//            interfaze.getMethods().clear();
+//
+//            repositoryClass.getImportedTypes().addAll(interfaze.getImportedTypes());
+//            interfaze.getImportedTypes().clear();
+//            getContext().addProperty("__Repository__","true");
+//
+//        }
 
         Interface baseMapperClass = this.getBaseMapperInterface(introspectedTable);
+
+        baseMapperClass.getSuperInterfaceTypes().addAll(interfaze.getSuperInterfaceTypes());
+        interfaze.getSuperInterfaceTypes().clear();
+
+
         interfaze.addSuperInterface(baseMapperClass.getType());
 
         baseMapperClass.getMethods().addAll(interfaze.getMethods());
@@ -340,6 +439,33 @@ public class SplitPlugin extends PluginAdapter {
 
         baseMapperClass.getImportedTypes().addAll(interfaze.getImportedTypes());
         interfaze.getImportedTypes().clear();
+
+        baseMapperClass.getFields().addAll(interfaze.getFields());
+        interfaze.getFields().clear();
+
+
+        baseMapperClass.getInnerInterfaces().addAll(interfaze.getInnerInterfaces());
+
+        interfaze.getInnerInterfaces().clear();
+
+
+        baseMapperClass.getFileCommentLines().addAll(interfaze.getFileCommentLines());
+
+        interfaze.getFileCommentLines().clear();
+
+
+        baseMapperClass.getAnnotations().addAll(interfaze.getAnnotations());
+        interfaze.getAnnotations().clear();
+
+        baseMapperClass.getJavaDocLines().addAll(interfaze.getJavaDocLines());
+        interfaze.getJavaDocLines().clear();
+
+        baseMapperClass.getStaticImports().addAll(interfaze.getStaticImports());
+        interfaze.getStaticImports().clear();
+
+
+
+
 
 
         GeneratedJavaFile gjf = new GeneratedJavaFile(interfaze,

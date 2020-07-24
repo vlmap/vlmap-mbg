@@ -2,7 +2,10 @@
 <!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
         "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
 <generatorConfiguration>
-    <context id="myid" targetRuntime="org.mybatis.generator.codegen.mybatis3.IntrospectedTableMyBatis3Impl">
+    <context id="myid"
+             targetRuntime="org.mybatis.generator.codegen.mybatis3.IntrospectedTableMyBatis3Impl"
+
+    >
 
 
 
@@ -25,14 +28,22 @@
             <property name="type" value="com.github.vlmap.mbg.plugins.HbmPlugin"/>
 
         </plugin>
-        <!--&lt;!&ndash;这个插件应该最后加载&ndash;&gt;-->
-        <!--<plugin type="com.github.vlmap.mbg.plugins.SplitPlugin">-->
-            <!--<property name="type" value="com.github.vlmap.mbg.plugins.SplitPlugin"/>-->
-            <!--&lt;!&ndash;指定抽象类所在的子包&ndash;&gt;-->
-            <!--<property name="basePackage" value="base"/>-->
-            <!--&lt;!&ndash;指定抽象类名称前缀&ndash;&gt;-->
-            <!--<property name="baseClassPrefix" value="Base"/>-->
-        <!--</plugin>-->
+
+        <plugin type="com.github.vlmap.mbg.plugins.SelectPropertyPlugin">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SelectPropertyPlugin"/>
+
+        </plugin>
+        <plugin type="com.github.vlmap.mbg.plugins.XMLBasePlugin">
+            <property name="type" value="com.github.vlmap.mbg.plugins.XMLBasePlugin"/>
+        </plugin>
+        <!--这个插件应该最后加载-->
+        <plugin type="com.github.vlmap.mbg.plugins.SplitPlugin">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SplitPlugin"/>
+            <!--指定抽象类所在的子包-->
+            <property name="basePackage" value="base"/>
+            <!--指定抽象类名称前缀-->
+            <property name="baseClassPrefix" value="Base"/>
+        </plugin>
 
 
         <commentGenerator>

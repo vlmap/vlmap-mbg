@@ -9,6 +9,8 @@ import org.mybatis.generator.api.IntrospectedTable;
 
 import java.lang.reflect.Method;
 
+import static org.mybatis.generator.internal.util.StringUtility.stringHasValue;
+
 public class IntrospectedTableUtils {
     private final static String FULL_IDENTIFIER_PROPERTY = "___fullKey___";
 
@@ -44,10 +46,18 @@ public class IntrospectedTableUtils {
     }
 
 
+    public static String getIdentityIntrospectedColumn(IntrospectedColumn introspectedColumn){
+        return introspectedColumn.getProperties().getProperty(FULL_IDENTIFIER_PROPERTY);
+
+    }
 
     public static  IntrospectedColumn withIdentityIntrospectedColumn(IntrospectedColumn introspectedColumn) {
-        String property = introspectedColumn.getProperties().getProperty(FULL_IDENTIFIER_PROPERTY);
-        if (StringUtils.isNotBlank(property)) {
+        String property =getIdentityIntrospectedColumn(introspectedColumn);
+        return withIdentityIntrospectedColumn(introspectedColumn,property);
+
+    }
+    public static  IntrospectedColumn withIdentityIntrospectedColumn(IntrospectedColumn introspectedColumn,String property) {
+         if (StringUtils.isNotBlank(property)) {
             IntrospectedColumn column = new IntrospectedColumn();
             column.setJdbcType(introspectedColumn.getJdbcType());
             column.setJdbcTypeName(introspectedColumn.getJdbcTypeName());
@@ -76,11 +86,13 @@ public class IntrospectedTableUtils {
         return introspectedColumn;
 
     }
-
     public static void setIdentifierPropertyfullKey( IntrospectedColumn column,String value){
         column.getProperties().setProperty(FULL_IDENTIFIER_PROPERTY, value);
 
     }
+
+
+
 
     public static void calculate(IntrospectedTable introspectedTable) {
 

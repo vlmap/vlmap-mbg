@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Properties;
 
 public class HbmEntityUtils {
-    public static AbstractEntityPersister entityPersister(IntrospectedTable introspectedTable){
+    public static AbstractEntityPersister entityPersister(IntrospectedTable introspectedTable)  {
         String modelClass = IntrospectedTableUtils.getHbmModelClass(introspectedTable);
         introspectedTable.setBaseRecordType(modelClass);
         String dialect=   introspectedTable.getTableConfigurationProperty("hibernate.dialect");
@@ -71,8 +71,9 @@ public class HbmEntityUtils {
 
             entityManagerFactory = (SessionFactoryImplementor)new EntityManagerFactoryBuilderImpl(descriptor, properties).build();
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+
+
+            throw  new RuntimeException("modelClass:"+modelClass+",parse error",e);
         }
 
         introspectedTable.setAttribute("sessionFactoryImplementor",entityManagerFactory);
