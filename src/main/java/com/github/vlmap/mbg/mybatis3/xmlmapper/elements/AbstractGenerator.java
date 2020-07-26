@@ -1,11 +1,10 @@
 package com.github.vlmap.mbg.mybatis3.xmlmapper.elements;
 
+import com.github.vlmap.mbg.core.IntrospectedTableUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
-import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
-import org.mybatis.generator.api.dom.java.Interface;
-import org.mybatis.generator.api.dom.java.Method;
-import org.mybatis.generator.api.dom.java.TopLevelClass;
+import org.mybatis.generator.api.dom.java.*;
 import org.mybatis.generator.api.dom.xml.Attribute;
 import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.Element;
@@ -14,10 +13,10 @@ import org.mybatis.generator.api.dom.xml.XmlElement;
 import java.util.*;
 
 public abstract class AbstractGenerator implements Generator {
-    Optation optation;
+    protected Optation optation;
 
-    String name;
-    String id;
+    protected String name;
+    protected String id;
 
     public AbstractGenerator(String name, String id, Optation optation) {
         this.optation = optation;
@@ -30,31 +29,41 @@ public abstract class AbstractGenerator implements Generator {
 
         switch (optation) {
             case ADD: {
-                Method method = methodGenerated(null, new Method(id), interfaze, introspectedTable);
+                Method pre = getMethod(interfaze.getMethods(), id);
 
-                if (method != null) {
-                    interfaze.addMethod(method);
+                List<Method> methods = methodGenerated(pre, new Method(id), interfaze, introspectedTable);
+
+                if (methods != null && !methods.isEmpty()) {
+
+                    removeAllMethod(interfaze.getMethods(), methods);
+
+                    interfaze.getMethods().addAll(methods);
                 }
                 break;
             }
             case DELETE: {
                 Method pre = getMethod(interfaze.getMethods(), id);
-                if (pre != null) {
-                    interfaze.getMethods().remove(pre);
+
+                List<Method> methods = methodGenerated(pre, null, interfaze, introspectedTable);
+                if (methods != null && !methods.isEmpty()) {
+                    removeAllMethod(interfaze.getMethods(), methods);
                 }
-                methodGenerated(pre, null, interfaze, introspectedTable);
                 break;
             }
             case REPLACE: {
                 Method pre = getMethod(interfaze.getMethods(), id);
+                if (pre != null) {
+                    List<Method> methods = methodGenerated(pre, new Method(id), interfaze, introspectedTable);
 
-                Method method = methodGenerated(pre, new Method(id), interfaze, introspectedTable);
+                    if (methods != null && !methods.isEmpty()) {
 
-                if (method != null) {
-                    if (pre != null) {
                         interfaze.getMethods().remove(pre);
                     }
-                    interfaze.addMethod(method);
+                    if (methods != null) {
+                        removeAllMethod(interfaze.getMethods(), methods);
+                        interfaze.getMethods().addAll(methods);
+                    }
+
                 }
                 break;
             }
@@ -65,19 +74,68 @@ public abstract class AbstractGenerator implements Generator {
         return false;
     }
 
+    private void removeAllMethod(List<Method> parentMethods, List<Method> methods) {
+        if (methods == null) return;
+        for (Method method : methods) {
+
+            for (Method parent : parentMethods) {
+
+                if (methodEquals(method, parent)) {
+                    parentMethods.remove(parent);
+                    break;
+                }
+
+            }
+
+
+        }
+    }
+
+    private boolean methodEquals(Method m1, Method m2) {
+        if (Objects.equals(m1.getReturnType(), m2.getReturnType())
+                && Objects.equals(m1.getName(), m2.getName())
+                && m1.getParameters().size() == m2.getParameters().size()
+        ) {
+            for (int i = 0, size = m1.getParameters().size(); i < size; i++) {
+                Parameter p1 = m1.getParameters().get(i);
+                Parameter p2 = m2.getParameters().get(i);
+                if (Objects.equals(p1.getType(), p2.getType())) {
+                    return true;
+                }
+            }
+
+        }
+        return false;
+    }
+
+    private void removeAllElement(List<Element> parentElements, List<XmlElement> elements) {
+        for (XmlElement element : elements) {
+            XmlElement parentXml = getElement(parentElements, null, getAttribute(element, "id"));
+            if (parentXml != null) {
+                parentElements.remove(parentXml);
+            }
+
+
+        }
+    }
+
     public boolean sqlMapDocumentGenerated(Document document, IntrospectedTable introspectedTable) {
 
         switch (optation) {
             case ADD: {
+                XmlElement pre = getElement(document.getRootElement().getElements(), name, id);
                 XmlElement answer = new XmlElement(name);
                 if (StringUtils.isNotBlank(id)) {
                     answer.addAttribute(new Attribute("id", id));
                 }
 
-                answer = xmlGenerated(null, answer, document, introspectedTable);
+                List<XmlElement> elements = xmlGenerated(pre, answer, document, introspectedTable);
 
-                if (answer != null) {
-                    document.getRootElement().getElements().add(answer);
+                if (elements != null && !elements.isEmpty()) {
+
+
+                    removeAllElement(document.getRootElement().getElements(), elements);
+                    document.getRootElement().getElements().addAll(elements);
                 }
                 break;
             }
@@ -85,10 +143,12 @@ public abstract class AbstractGenerator implements Generator {
 
                 XmlElement pre = getElement(document.getRootElement().getElements(), name, id);
 
-                if (pre != null) {
-                    document.getRootElement().getElements().remove(pre);
+
+                List<XmlElement> elements = xmlGenerated(pre, null, document, introspectedTable);
+                if (elements != null && !elements.isEmpty()) {
+                    removeAllElement(document.getRootElement().getElements(), elements);
+
                 }
-                xmlGenerated(pre, null, document, introspectedTable);
                 break;
             }
             case REPLACE: {
@@ -98,14 +158,15 @@ public abstract class AbstractGenerator implements Generator {
                 if (StringUtils.isNotBlank(id)) {
                     answer.addAttribute(new Attribute("id", id));
                 }
-                answer = xmlGenerated(pre, answer, document, introspectedTable);
+                List<XmlElement> elements = xmlGenerated(pre, answer, document, introspectedTable);
+                if (pre != null) {
+                    document.getRootElement().getElements().remove(pre);
+                    if (elements != null && !elements.isEmpty()) {
 
-                if (answer != null) {
-                    if (pre != null) {
-                        document.getRootElement().getElements().remove(pre);
+                        removeAllElement(document.getRootElement().getElements(), elements);
+                        document.getRootElement().getElements().addAll(elements);
+
                     }
-                    document.getRootElement().getElements().add(answer);
-
                 }
 
 
@@ -115,7 +176,18 @@ public abstract class AbstractGenerator implements Generator {
         return false;
     }
 
-    public Method getMethod(List<Method> list, String name) {
+
+    protected IntrospectedColumn getIntrospectedColumn(IntrospectedTable introspectedTable, String property) {
+        for (IntrospectedColumn introspectedColumn : introspectedTable.getAllColumns()) {
+            if (property.equals(introspectedColumn.getJavaProperty())
+                    || property.equals(IntrospectedTableUtils.withIdentityIntrospectedColumn(introspectedColumn).getJavaProperty())) {
+                return introspectedColumn;
+            }
+        }
+        return null;
+    }
+
+    protected Method getMethod(List<Method> list, String name) {
         for (Method method : list) {
             if (name.equals(method.getName())) {
                 return method;
@@ -124,13 +196,16 @@ public abstract class AbstractGenerator implements Generator {
         return null;
     }
 
-    public XmlElement getElement(List<Element> list, String name, String id) {
+    protected XmlElement getElement(List<Element> list, String name, String id) {
         for (Element element : list) {
-            XmlElement el = (XmlElement) element;
-            String _name = el.getName();
-            String _id = getAttribute(el, "id");
-            if (StringUtils.equals(_name, name) && StringUtils.equals(_id, id)) {
-                return el;
+            if (element instanceof XmlElement) {
+                XmlElement el = (XmlElement) element;
+                String _name = el.getName();
+                String _id = getAttribute(el, "id");
+                if (StringUtils.equals(_name, name) && StringUtils.equals(_id, id)) {
+                    return el;
+                }
+
             }
 
         }
@@ -139,7 +214,7 @@ public abstract class AbstractGenerator implements Generator {
         return null;
     }
 
-    public String getAttribute(XmlElement element, String name) {
+    protected String getAttribute(XmlElement element, String name) {
         for (Attribute attribute : element.getAttributes()) {
             if (attribute.getName().equals(name)) {
                 return attribute.getValue();
@@ -151,11 +226,10 @@ public abstract class AbstractGenerator implements Generator {
 
     }
 
-    public abstract void addImportedType(Interface interfaze, Set<FullyQualifiedJavaType> importedTypes, Set<String> staticImports, IntrospectedTable introspectedTable);
 
-    public abstract Method methodGenerated(Method pre, Method answer, Interface interfaze, IntrospectedTable introspectedTable);
+    public abstract List<Method> methodGenerated(Method pre, Method answer, Interface interfaze, IntrospectedTable introspectedTable);
 
-    public abstract XmlElement xmlGenerated(XmlElement pre, XmlElement answer, Document document, IntrospectedTable introspectedTable);
+    public abstract List<XmlElement> xmlGenerated(XmlElement pre, XmlElement answer, Document document, IntrospectedTable introspectedTable);
 
     class MapperComparator implements Comparator<Element> {
         //    cache-ref | cache | resultMap* | parameterMap* | sql* | insert* | update* | delete* | select

@@ -1,7 +1,6 @@
 package com.github.vlmap.mbg.mybatis3.xmlmapper.elements;
 
-import com.github.vlmap.mbg.core.IntrospectedTableUtils;
-import org.apache.commons.lang3.StringUtils;
+ import org.apache.commons.lang3.StringUtils;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
@@ -12,7 +11,9 @@ import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.Element;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 
-import java.util.Set;
+ import java.util.Arrays;
+ import java.util.List;
+ import java.util.Set;
 
 public class IfSelectKeyGenerator extends AbstractGenerator {
     public IfSelectKeyGenerator(String name, String id) {
@@ -25,13 +26,13 @@ public class IfSelectKeyGenerator extends AbstractGenerator {
     }
 
     @Override
-    public Method methodGenerated(Method pre, Method answer, Interface interfaze, IntrospectedTable introspectedTable) {
+    public List<Method> methodGenerated(Method pre, Method answer, Interface interfaze, IntrospectedTable introspectedTable) {
 
         return null;
     }
 
     @Override
-    public XmlElement xmlGenerated(XmlElement pre, XmlElement answer, Document document, IntrospectedTable introspectedTable) {
+    public List<XmlElement> xmlGenerated(XmlElement pre, XmlElement answer, Document document, IntrospectedTable introspectedTable) {
         if (pre != null) {
             answer.getAttributes().addAll(pre.getAttributes());
 
@@ -45,29 +46,18 @@ public class IfSelectKeyGenerator extends AbstractGenerator {
                         if(StringUtils.isNotBlank(value)){
                             IntrospectedColumn introspectedColumn=      getIntrospectedColumn(introspectedTable,value);
                             if(introspectedColumn!=null){
-                                ifElement.addAttribute(new Attribute("test", "_parameter.containsKey('"+introspectedColumn.getJavaProperty()+"')"));
+                                ifElement.addAttribute(new Attribute("test", "!_parameter.containsKey('"+introspectedColumn.getJavaProperty()+"')"));
                             }
                         }
                         answer.addElement(ifElement);
+                        continue;
 
-                    }else{
-                        answer.addElement(element);
                     }
-                }else{
-                    answer.addElement(element);
                 }
+                answer.addElement(element);
+            }
+        }
+        return Arrays.asList(answer);
+    }
 
-            }
-        }
-        return answer;
-    }
-    private IntrospectedColumn getIntrospectedColumn(IntrospectedTable introspectedTable,String property){
-        for(IntrospectedColumn introspectedColumn :introspectedTable.getAllColumns()){
-            if(property.equals(introspectedColumn.getJavaProperty())
-                    ||property.equals(IntrospectedTableUtils.withIdentityIntrospectedColumn(introspectedColumn).getJavaProperty())){
-                return introspectedColumn;
-            }
-        }
-        return  null;
-    }
 }

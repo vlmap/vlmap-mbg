@@ -56,6 +56,9 @@ public class IntrospectedTableUtils {
         return withIdentityIntrospectedColumn(introspectedColumn,property);
 
     }
+    public static  IntrospectedColumn clone(IntrospectedColumn introspectedColumn){
+        return withIdentityIntrospectedColumn(introspectedColumn,introspectedColumn.getJavaProperty());
+    }
     public static  IntrospectedColumn withIdentityIntrospectedColumn(IntrospectedColumn introspectedColumn,String property) {
          if (StringUtils.isNotBlank(property)) {
             IntrospectedColumn column = new IntrospectedColumn();
