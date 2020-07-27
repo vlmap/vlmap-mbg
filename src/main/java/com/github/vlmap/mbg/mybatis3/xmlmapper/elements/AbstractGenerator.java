@@ -23,7 +23,7 @@ public abstract class AbstractGenerator implements Generator {
         this.name = name;
         this.id = id;
     }
-
+    public void initialized(IntrospectedTable introspectedTable){}
 
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
 

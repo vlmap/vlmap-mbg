@@ -1,24 +1,22 @@
 package com.github.vlmap.mbg.mybatis3.xmlmapper.elements;
 
-import com.github.vlmap.mbg.core.IntrospectedTableUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.hibernate.persister.entity.AbstractEntityPersister;
-import org.hibernate.type.ComponentType;
-import org.hibernate.type.Type;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
-import org.mybatis.generator.api.dom.java.*;
-import org.mybatis.generator.api.dom.xml.*;
+import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
+import org.mybatis.generator.api.dom.java.Interface;
+import org.mybatis.generator.api.dom.java.Method;
+import org.mybatis.generator.api.dom.xml.Attribute;
+import org.mybatis.generator.api.dom.xml.Document;
+import org.mybatis.generator.api.dom.xml.TextElement;
+import org.mybatis.generator.api.dom.xml.XmlElement;
 import org.mybatis.generator.config.GeneratedKey;
-import org.mybatis.generator.internal.util.JavaBeansUtil;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public class GetSelectKeyGenerator extends AbstractGenerator {
-    public GetSelectKeyGenerator() {
+public class SelectKeyGenerator extends AbstractGenerator {
+    public SelectKeyGenerator() {
         super("select", "selectKey", Optation.ADD);
     }
 

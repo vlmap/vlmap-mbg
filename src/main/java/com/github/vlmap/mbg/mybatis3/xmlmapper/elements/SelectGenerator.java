@@ -8,7 +8,10 @@ import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
 import org.mybatis.generator.api.dom.java.Interface;
 import org.mybatis.generator.api.dom.java.Method;
 import org.mybatis.generator.api.dom.java.Parameter;
-import org.mybatis.generator.api.dom.xml.*;
+import org.mybatis.generator.api.dom.xml.Attribute;
+import org.mybatis.generator.api.dom.xml.Document;
+import org.mybatis.generator.api.dom.xml.TextElement;
+import org.mybatis.generator.api.dom.xml.XmlElement;
 import org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities;
 import org.mybatis.generator.config.Context;
 
@@ -92,7 +95,7 @@ public class SelectGenerator extends AbstractGenerator {
                 Method method = new Method(answer);
                 method.setReturnType(new FullyQualifiedJavaType("Long"));
 
-                 Parameter parameter = new Parameter(new FullyQualifiedJavaType("java.util.Map<String,Object>"), "params");
+                Parameter parameter = new Parameter(new FullyQualifiedJavaType("java.util.Map<String,Object>"), "params");
                 parameter.addAnnotation("@Param(\"params\")");
                 method.addParameter(parameter);
                 list.add(method);
@@ -310,10 +313,10 @@ public class SelectGenerator extends AbstractGenerator {
         }
         XmlElement result = new XmlElement("if"); //$NON-NLS-1$
         if(ismap){
-            result.addAttribute(new Attribute("test", key + "!=null and !"+key+".isEmpty()"));
+            result.addAttribute(new Attribute("test", "_parameter.containsKey('"+key+"')   and !"+key+".isEmpty()"));
 
         }else{
-            result.addAttribute(new Attribute("test", key + "!=null"));
+            result.addAttribute(new Attribute("test", "_parameter.containsKey('"+key+"')"));
 
         }
         result.addElement(insertTrimElement);

@@ -29,8 +29,8 @@
 
         </plugin>
 
-        <plugin type="com.github.vlmap.mbg.plugins.SelectPropertyPlugin">
-            <property name="type" value="com.github.vlmap.mbg.plugins.SelectPropertyPlugin"/>
+        <plugin type="com.github.vlmap.mbg.plugins.CompositePlugin">
+            <property name="type" value="com.github.vlmap.mbg.plugins.CompositePlugin"/>
 
         </plugin>
         <plugin type="com.github.vlmap.mbg.plugins.XMLBasePlugin">

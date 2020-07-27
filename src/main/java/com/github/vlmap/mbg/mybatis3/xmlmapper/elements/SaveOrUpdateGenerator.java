@@ -11,14 +11,10 @@ import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.Plugin;
 import org.mybatis.generator.api.dom.java.*;
-import org.mybatis.generator.api.dom.xml.Attribute;
 import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.Element;
 import org.mybatis.generator.api.dom.xml.XmlElement;
-import org.mybatis.generator.codegen.mybatis3.javamapper.AnnotatedClientGenerator;
-import org.mybatis.generator.codegen.mybatis3.javamapper.JavaMapperGenerator;
-import org.mybatis.generator.codegen.mybatis3.javamapper.MixedClientGenerator;
-import org.mybatis.generator.codegen.mybatis3.xmlmapper.elements.AbstractXmlElementGenerator;
+import org.mybatis.generator.codegen.mybatis3.IntrospectedTableMyBatis3SimpleImpl;
 import org.mybatis.generator.codegen.mybatis3.xmlmapper.elements.InsertElementGenerator;
 import org.mybatis.generator.config.Context;
 import org.mybatis.generator.config.GeneratedKey;
@@ -128,7 +124,7 @@ public class SaveOrUpdateGenerator extends AbstractGenerator {
                  answer.addBodyLine("} else {");
                  answer.addBodyLine("//不使用selectKey");
 
-                 answer.addBodyLine("  __" + introspectedTable.getInsertStatementId() + "(record);");
+                 answer.addBodyLine("  "+getInsertWithPrimaryKeytStatementId(introspectedTable) + "(record);");
                  answer.addBodyLine("return;");
                  answer.addBodyLine("}");
 //                answer.addBodyLine(" throw new IllegalArgumentException(\""+updateName+"方法使用了selectKey,primaryKey有值的情况不能执行insert操作,record[\"+record+\"]\");");
@@ -145,7 +141,7 @@ public class SaveOrUpdateGenerator extends AbstractGenerator {
 
             method.setReturnType(FullyQualifiedJavaType.getIntInstance());
             method.setVisibility(JavaVisibility.PUBLIC);
-            method.setName("__"+introspectedTable.getInsertStatementId());
+            method.setName(getInsertWithPrimaryKeytStatementId(introspectedTable));
 
             FullyQualifiedJavaType parameterType;
             boolean isSimple=isSample(introspectedTable);
@@ -167,13 +163,16 @@ public class SaveOrUpdateGenerator extends AbstractGenerator {
 
         return list;
     }
+
+    protected  static String getInsertWithPrimaryKeytStatementId(IntrospectedTable introspectedTable){
+      return   introspectedTable.getInsertStatementId()+"WithPrimaryKey";
+    }
     protected boolean isSample(IntrospectedTable introspectedTable){
-        String type = introspectedTable.getContext().getJavaClientGeneratorConfiguration()
-                .getConfigurationType();
-        if ("XMLMAPPER".equalsIgnoreCase(type)||"MAPPER".equalsIgnoreCase(type)) {
-            return false;
+        if (introspectedTable instanceof IntrospectedTableMyBatis3SimpleImpl) {
+            return true;
         }
-        return  true;
+
+        return false;
     }
 
     @Override
@@ -195,7 +194,7 @@ public class SaveOrUpdateGenerator extends AbstractGenerator {
         DelegatingIntrospectedTable delegating = new IdentityDelegatingIntrospectedTable(introspectedTable.getTargetRuntime(), introspectedTable){
             @Override
             public String getInsertStatementId() {
-                return "__"+super.getInsertStatementId();
+                return getInsertWithPrimaryKeytStatementId(target);
             }
 
             @Override

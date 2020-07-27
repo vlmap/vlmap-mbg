@@ -12,7 +12,6 @@ import org.hibernate.id.IdentityGenerator;
 import org.hibernate.id.enhanced.SequenceStyleGenerator;
 import org.hibernate.id.enhanced.TableGenerator;
 import org.hibernate.persister.entity.AbstractEntityPersister;
-import org.hibernate.type.AbstractSingleColumnStandardBasicType;
 import org.hibernate.type.ComponentType;
 import org.hibernate.type.SingleColumnType;
 import org.hibernate.type.Type;
