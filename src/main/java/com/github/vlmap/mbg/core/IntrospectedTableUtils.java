@@ -2,33 +2,43 @@ package com.github.vlmap.mbg.core;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.persister.entity.AbstractEntityPersister;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
+import org.mybatis.generator.api.PluginAdapter;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
-import static org.mybatis.generator.internal.util.StringUtility.stringHasValue;
 
 public class IntrospectedTableUtils {
-    private final static String FULL_IDENTIFIER_PROPERTY = "___fullKey___";
+    public final static String IDENTIFIER_PROPERTY_NAME = "identifierPropertyName";
 
 
     public static String  getHbmModelClass(IntrospectedTable introspectedTable){
         return  introspectedTable.getTableConfigurationProperty("model");
 
     }
-    public static boolean isIgnoreTableGenerator(IntrospectedTable introspectedTable) {
-        String property =     introspectedTable.getTableConfiguration().getProperty("ignoreTableGenerator");
+
+    /**
+     * 忽略不支持的主键生成策略
+     *
+     * @param plugin
+     * @return
+     */
+    public static boolean isIgnoreTableGenerator(PluginAdapter plugin) {
+
+
+        String property = plugin.getProperties().getProperty("ignoreTableGenerator");
 
         if (StringUtils.isBlank(property)) {
             property = "false";
         }
         return BooleanUtils.toBoolean(property);
     }
-    public static boolean createEntityFile(IntrospectedTable introspectedTable) {
-        String property = introspectedTable.getTableConfigurationProperty("entityJavaFile");
+
+    public static boolean isCreateEntityFile(PluginAdapter plugin) {
+        String property = plugin.getProperties().getProperty("entityJavaFile");
         if (StringUtils.isBlank(property)) {
             property = "false";
         }
@@ -41,18 +51,41 @@ public class IntrospectedTableUtils {
     public static AbstractEntityPersister entityPersiter(IntrospectedTable introspectedTable){
         return (AbstractEntityPersister)introspectedTable.getAttribute("entityPersister");
     }
+
     public static void entityPersiter(IntrospectedTable introspectedTable, AbstractEntityPersister entityPersister){
         introspectedTable.setAttribute("entityPersister", entityPersister);
     }
 
+    public static void setIdentifierPropertyName(IntrospectedTable introspectedTable, String name) {
+        if (StringUtils.isNotBlank(name)) {
+            introspectedTable.getTableConfiguration().addProperty(IDENTIFIER_PROPERTY_NAME, name);
+        }
 
-    public static String getIdentityIntrospectedColumn(IntrospectedColumn introspectedColumn){
-        return introspectedColumn.getProperties().getProperty(FULL_IDENTIFIER_PROPERTY);
+    }
+
+    public static String geIdentityPropertyName(IntrospectedTable introspectedTable) {
+        return introspectedTable.getTableConfiguration().getProperty(IDENTIFIER_PROPERTY_NAME);
+
+    }
+
+    public static String getWithIdentityColumnName(IntrospectedColumn introspectedColumn) {
+        IntrospectedTable introspectedTable = introspectedColumn.getIntrospectedTable();
+        List<IntrospectedColumn> primaryKeyColumns = introspectedTable.getPrimaryKeyColumns();
+        if (primaryKeyColumns.contains(introspectedColumn)) {
+            String identitfierProperty = introspectedTable.getTableConfiguration().getProperty(IDENTIFIER_PROPERTY_NAME);
+            if (StringUtils.isNotBlank(identitfierProperty)) {
+                return identitfierProperty + "." + introspectedColumn.getJavaProperty();
+            }
+
+        }
+        return null;
+
+//        return introspectedColumn.getProperties().getProperty(FULL_IDENTIFIER_PROPERTY);
 
     }
 
     public static  IntrospectedColumn withIdentityIntrospectedColumn(IntrospectedColumn introspectedColumn) {
-        String property =getIdentityIntrospectedColumn(introspectedColumn);
+        String property = getWithIdentityColumnName(introspectedColumn);
         return withIdentityIntrospectedColumn(introspectedColumn,property);
 
     }
@@ -89,10 +122,7 @@ public class IntrospectedTableUtils {
         return introspectedColumn;
 
     }
-    public static void setIdentifierPropertyfullKey( IntrospectedColumn column,String value){
-        column.getProperties().setProperty(FULL_IDENTIFIER_PROPERTY, value);
 
-    }
 
 
 

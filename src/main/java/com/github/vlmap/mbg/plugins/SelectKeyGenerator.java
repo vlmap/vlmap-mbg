@@ -1,5 +1,6 @@
-package com.github.vlmap.mbg.mybatis3.xmlmapper.elements;
+package com.github.vlmap.mbg.plugins;
 
+import com.github.vlmap.mbg.mybatis3.xmlmapper.elements.AbstractGenerator;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
@@ -13,18 +14,23 @@ import org.mybatis.generator.config.GeneratedKey;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 public class SelectKeyGenerator extends AbstractGenerator {
-    public SelectKeyGenerator() {
-        super("select", "selectKey", Optation.ADD);
+
+    @Override
+    public Optation getOptation() {
+        return Optation.ADD;
     }
 
     @Override
-    public void addImportedType(Interface interfaze, Set<FullyQualifiedJavaType> importedTypes, Set<String> staticImports, IntrospectedTable introspectedTable) {
-
+    public String getId() {
+        return "selectKey";
     }
 
+    @Override
+    public String getName() {
+        return "select";
+    }
     @Override
     public List<Method> methodGenerated(Method pre, Method answer, Interface interfaze, IntrospectedTable introspectedTable) {
 

@@ -14,7 +14,9 @@
         <property name="javaFileEncoding" value="UTF-8"/>
         <property name="autoDelimitKeywords" value="true"/>
 
-        <!--******************指定example项目路径***************-->
+
+
+
 
         <plugin type="org.mybatis.generator.plugins.RenameExampleClassPlugin">
             <property name="type" value="org.mybatis.generator.plugins.RenameExampleClassPlugin"/>
@@ -23,19 +25,60 @@
         </plugin>
 
 
-
+        <!---->
         <plugin type="com.github.vlmap.mbg.plugins.HbmPlugin">
             <property name="type" value="com.github.vlmap.mbg.plugins.HbmPlugin"/>
+            <!--是否在Model目录生成Model对应的类-->
+            <property name="entityJavaFile" value="true"/>
+            <!--忽略GenerationType.TABLE类型主键生成器转换-->
+            <property name="ignoreTableGenerator" value="true"/>
+
+        </plugin>
+        <!--Hibernate @EmbeddedId支持-->
+        <plugin type="com.github.vlmap.mbg.plugins.EmbeddedPlugin">
+            <property name="type" value="com.github.vlmap.mbg.plugins.EmbeddedPlugin"/>
+        </plugin>
+        <!--save判断有没有传入主键判断是否走SelectKey逻辑防止传入值和SelectKey返回值不一致-->
+        <plugin type="com.github.vlmap.mbg.plugins.SaveGenerator">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SaveGenerator"/>
+            <property name="id" value="insert"/>
+            <property name="insertStatementId" value="___insert___"/>
+
+        </plugin>
+        <!--SaveOrUpdate-->
+        <plugin type="com.github.vlmap.mbg.plugins.SaveOrUpdateGenerator">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SaveOrUpdateGenerator"/>
+            <property name="id" value="saveOrUpdate"/>
+            <property name="count" value="count"/>
+            <property name="insertStatementId" value="___insert___"/>
+
+
+        </plugin>
+        <plugin type="com.github.vlmap.mbg.plugins.SelectCountGenerator">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SelectCountGenerator"/>
+            <property name="id" value="count"/>
+
+
+        </plugin>
+        <plugin type="com.github.vlmap.mbg.plugins.SelectKeyGenerator">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SelectKeyGenerator"/>
+            <property name="id" value="nextKey"/>
+        </plugin>
+        <plugin type="com.github.vlmap.mbg.plugins.SelectOneGenerator">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SelectOneGenerator"/>
+            <property name="id" value="selectOne"/>
+        </plugin>
+        <plugin type="com.github.vlmap.mbg.plugins.SelectListGenerator">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SelectListGenerator"/>
+            <property name="id" value="selectList"/>
+
+        </plugin>
+        <plugin type="com.github.vlmap.mbg.plugins.SelectAllGenerator">
+            <property name="type" value="com.github.vlmap.mbg.plugins.SelectAllGenerator"/>
+            <property name="id" value="all"/>
 
         </plugin>
 
-        <plugin type="com.github.vlmap.mbg.plugins.CompositePlugin">
-            <property name="type" value="com.github.vlmap.mbg.plugins.CompositePlugin"/>
-
-        </plugin>
-        <plugin type="com.github.vlmap.mbg.plugins.XMLBasePlugin">
-            <property name="type" value="com.github.vlmap.mbg.plugins.XMLBasePlugin"/>
-        </plugin>
         <!--这个插件应该最后加载-->
         <plugin type="com.github.vlmap.mbg.plugins.SplitPlugin">
             <property name="type" value="com.github.vlmap.mbg.plugins.SplitPlugin"/>
@@ -86,6 +129,7 @@
                enableUpdateByExample="false"
 
 
+
         >
             <generatedKey column="n_id" sqlStatement="MySql" identity="true"/>
 
@@ -109,20 +153,17 @@
         <table domainObjectName="EmbeddedIdEntity"  tableName="hbm_tab_embedded">
             <property name="model" value="com.github.vlmap.mbg.test.EmbeddedIdEntity"/>
 
-            <property name="entityJavaFile" value="true"/>
+
         </table>
 
         <table domainObjectName="IdClassEntity" tableName="hbm_tab_idclass" >
             <property name="model" value="com.github.vlmap.mbg.test.IdClassEntity"/>
-            <property name="entityJavaFile" value="true"/>
+
         </table>
         <table domainObjectName="SampleEntity"         tableName="hbm_tab_sample" >
             <!--指定Hibernate用@Entity注解的Bean,bean在classpath中要能加载到-->
             <property name="model" value="com.github.vlmap.mbg.test.SampleEntity"/>
-            <!--是否在Model目录生成Model对应的类-->
-            <property name="entityJavaFile" value="true"/>
-            <!--忽略GenerationType.TABLE类型主键生成器转换-->
-            <property name="ignoreTableGenerator" value="true"/>
+
             <!---->
             <!--<property name="hibernate.dialect" value="org.hibernate.dialect.Oracle10gDialect"/>-->
 

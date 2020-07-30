@@ -22,18 +22,27 @@ import java.util.Set;
 
 import static org.mybatis.generator.internal.util.StringUtility.stringHasValue;
 
-public class SelectGenerator extends AbstractGenerator {
+public abstract class AbstractSelectGenerator extends AbstractGenerator {
     public enum Result {
         ONE, LIST, ALL, COUNT
     }
 
-    Result result;
+//    Result result;
 
-    public SelectGenerator(String id, Result result) {
-        super("select", id, Optation.ADD);
-        this.result = result;
+
+
+    protected abstract   Result getSelectType();
+    @Override
+    public Optation getOptation() {
+        return Optation.ADD;
     }
 
+
+
+    @Override
+    public String getName() {
+        return "select";
+    }
     @Override
     public void addImportedType(Interface interfaze, Set<FullyQualifiedJavaType> importedTypes, Set<String> staticImports, IntrospectedTable introspectedTable) {
         interfaze.addImportedType(new FullyQualifiedJavaType("java.util.Map"));
@@ -50,6 +59,7 @@ public class SelectGenerator extends AbstractGenerator {
         List<Method> list = new ArrayList<>();
 
         FullyQualifiedJavaType baseRecordType = new FullyQualifiedJavaType(introspectedTable.getBaseRecordType());
+        Result result=getSelectType();
         switch (result) {
             case ONE: {
                 Method method = new Method(answer);
@@ -119,6 +129,7 @@ public class SelectGenerator extends AbstractGenerator {
 
     @Override
     public List<XmlElement> xmlGenerated(XmlElement pre, XmlElement answer, Document document, IntrospectedTable introspectedTable) {
+        Result result=getSelectType();
         if (result == Result.COUNT) {
             answer.addAttribute(new Attribute("resultType", "java.lang.Long"));
 
@@ -178,64 +189,7 @@ public class SelectGenerator extends AbstractGenerator {
         insertTrimElement = where("params", true, introspectedTable);
 
         answer.addElement(insertTrimElement);
-////        XmlElement valuesTrimElement = new XmlElement("trim"); //$NON-NLS-1$
-////        valuesTrimElement.addAttribute(new Attribute("prefix", "values (")); //$NON-NLS-1$ //$NON-NLS-2$
-////        valuesTrimElement.addAttribute(new Attribute("suffix", ")")); //$NON-NLS-1$ //$NON-NLS-2$
-////        valuesTrimElement.addAttribute(new Attribute("suffixOverrides", ",")); //$NON-NLS-1$ //$NON-NLS-2$
-////        answer.addElement(valuesTrimElement);
-//
-//        for (IntrospectedColumn introspectedColumn : introspectedTable.getAllColumns()) {
-//            String innerProperty = IntrospectedTableUtils.getIdentityIntrospectedColumn(introspectedColumn);
-//            if (StringUtils.isNotBlank(innerProperty)) {
-//                introspectedColumn = IntrospectedTableUtils.withIdentityIntrospectedColumn(introspectedColumn);
-//
-//            }
-//
-//            if (introspectedColumn.isSequenceColumn()
-//                    || introspectedColumn.getFullyQualifiedJavaType().isPrimitive()) {
-//
-//                sb.setLength(0);
-//                sb.append(MyBatis3FormattingUtilities
-//                        .getEscapedColumnName(introspectedColumn));
-//                sb.append(',');
-//                insertTrimElement.addElement(new TextElement(sb.toString()));
-//
-//
-//                continue;
-//            }
-//
-//
-//            sb.setLength(0);
-//            sb.append("_parameter.containsKey('");
-//            sb.append(introspectedColumn.getJavaProperty());
-//            sb.append("')"); //$NON-NLS-1$
-//            XmlElement valuesNotNullElement = new XmlElement("if"); //$NON-NLS-1$
-//            valuesNotNullElement.addAttribute(new Attribute(
-//                    "test", sb.toString())); //$NON-NLS-1$
-//            String name = innerProperty;
-////            if (StringUtils.isNotBlank(innerProperty)) {
-////                XmlElement bind = new XmlElement("bind");
-////                name = StringUtils.replace(innerProperty, ".", "_");
-////                Attribute attribute = new Attribute("name", name);
-////                bind.addAttribute(attribute);
-////                attribute = new Attribute("value", "_parameter.get('" + innerProperty + "')");
-////                bind.addAttribute(attribute);
-////                valuesNotNullElement.addElement(bind);
-////            }
-//            sb.setLength(0);
-//            sb.append(MyBatis3FormattingUtilities
-//                    .getEscapedColumnName(introspectedColumn));
-//            sb.append("=");
-//            IntrospectedColumn column=    IntrospectedTableUtils.withIdentityIntrospectedColumn(introspectedColumn, name);
-////            sb.append(MyBatis3FormattingUtilities
-////                    .getParameterClause(IntrospectedTableUtils.withIdentityIntrospectedColumn(introspectedColumn, name)));
-//            sb.append(getParameterClause(column,null));
-//
-////            sb.append(',');
-//            valuesNotNullElement.addElement(new TextElement(sb.toString()));
-//            insertTrimElement.addElement(valuesNotNullElement);
-//        }
-//
+
 
         return Arrays.asList(answer);
     }
@@ -247,7 +201,7 @@ public class SelectGenerator extends AbstractGenerator {
 //        insertTrimElement.addAttribute(new Attribute("suffix", ")")); //$NON-NLS-1$ //$NON-NLS-2$
         insertTrimElement.addAttribute(new Attribute("suffixOverrides", "and")); //$NON-NLS-1$ //$NON-NLS-2$
         for (IntrospectedColumn introspectedColumn : introspectedTable.getAllColumns()) {
-            String innerProperty = IntrospectedTableUtils.getIdentityIntrospectedColumn(introspectedColumn);
+            String innerProperty = IntrospectedTableUtils.getWithIdentityColumnName(introspectedColumn);
             if (StringUtils.isNotBlank(innerProperty)) {
                 introspectedColumn = IntrospectedTableUtils.withIdentityIntrospectedColumn(introspectedColumn);
 

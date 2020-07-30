@@ -4,29 +4,42 @@ import com.github.vlmap.mbg.core.IntrospectedTableUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
+import org.mybatis.generator.api.PluginAdapter;
 import org.mybatis.generator.api.dom.java.*;
 import org.mybatis.generator.api.dom.xml.Attribute;
 import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.Element;
 import org.mybatis.generator.api.dom.xml.XmlElement;
+import org.mybatis.generator.codegen.mybatis3.IntrospectedTableMyBatis3SimpleImpl;
 
 import java.util.*;
 
-public abstract class AbstractGenerator implements Generator {
-    protected Optation optation;
+public abstract class AbstractGenerator extends PluginAdapter implements Generator {
 
-    protected String name;
-    protected String id;
 
-    public AbstractGenerator(String name, String id, Optation optation) {
-        this.optation = optation;
-        this.name = name;
-        this.id = id;
+    public void addImportedType(Interface interfaze, Set<FullyQualifiedJavaType> importedTypes, Set<String> staticImports, IntrospectedTable introspectedTable) {
     }
-    public void initialized(IntrospectedTable introspectedTable){}
+
+    @Override
+    public boolean validate(List<String> warnings) {
+        return true;
+    }
+
+    public abstract Optation getOptation();
+
+    public abstract String getName();
+
+    public abstract String getId();
+
+
+    public void initialized(IntrospectedTable introspectedTable) {
+    }
+
 
     public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
+        Optation optation = getOptation();
 
+        String id = StringUtils.defaultString(properties.getProperty("id"), getId());
         switch (optation) {
             case ADD: {
                 Method pre = getMethod(interfaze.getMethods(), id);
@@ -71,7 +84,7 @@ public abstract class AbstractGenerator implements Generator {
 
 
         addImportedType(interfaze, interfaze.getImportedTypes(), interfaze.getStaticImports(), introspectedTable);
-        return false;
+        return true;
     }
 
     private void removeAllMethod(List<Method> parentMethods, List<Method> methods) {
@@ -119,7 +132,21 @@ public abstract class AbstractGenerator implements Generator {
         }
     }
 
+
+
+    protected boolean isSimple(IntrospectedTable introspectedTable) {
+        if (introspectedTable instanceof IntrospectedTableMyBatis3SimpleImpl) {
+            return true;
+        }
+
+        return false;
+    }
+
     public boolean sqlMapDocumentGenerated(Document document, IntrospectedTable introspectedTable) {
+        Optation optation = getOptation();
+
+        String name = getName();
+        String id = StringUtils.defaultString(properties.getProperty("id"), getId());
 
         switch (optation) {
             case ADD: {
@@ -173,7 +200,7 @@ public abstract class AbstractGenerator implements Generator {
             }
         }
         Collections.sort(document.getRootElement().getElements(), new MapperComparator());
-        return false;
+        return true;
     }
 
 
@@ -188,6 +215,7 @@ public abstract class AbstractGenerator implements Generator {
     }
 
     protected Method getMethod(List<Method> list, String name) {
+        if (StringUtils.isBlank(name)) return null;
         for (Method method : list) {
             if (name.equals(method.getName())) {
                 return method;
