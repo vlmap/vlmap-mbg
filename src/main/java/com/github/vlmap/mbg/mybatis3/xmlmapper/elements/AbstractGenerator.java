@@ -123,7 +123,7 @@ public abstract class AbstractGenerator extends PluginAdapter implements Generat
 
     private void removeAllElement(List<Element> parentElements, List<XmlElement> elements) {
         for (XmlElement element : elements) {
-            XmlElement parentXml = getElement(parentElements, null, getAttribute(element, "id"));
+            XmlElement parentXml = getElement(parentElements,  getAttribute(element, "id"));
             if (parentXml != null) {
                 parentElements.remove(parentXml);
             }
@@ -223,7 +223,23 @@ public abstract class AbstractGenerator extends PluginAdapter implements Generat
         }
         return null;
     }
+    protected XmlElement getElement(List<Element> list,   String id) {
+        for (Element element : list) {
+            if (element instanceof XmlElement) {
+                XmlElement el = (XmlElement) element;
+                String _name = el.getName();
+                String _id = getAttribute(el, "id");
+                if (StringUtils.equals(_id, id)) {
+                    return el;
+                }
 
+            }
+
+        }
+
+
+        return null;
+    }
     protected XmlElement getElement(List<Element> list, String name, String id) {
         for (Element element : list) {
             if (element instanceof XmlElement) {

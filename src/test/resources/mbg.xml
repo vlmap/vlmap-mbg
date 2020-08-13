@@ -38,12 +38,14 @@
         <plugin type="com.github.vlmap.mbg.plugins.EmbeddedPlugin">
             <property name="type" value="com.github.vlmap.mbg.plugins.EmbeddedPlugin"/>
         </plugin>
+
         <!--save判断有没有传入主键判断是否走SelectKey逻辑防止传入值和SelectKey返回值不一致-->
         <plugin type="com.github.vlmap.mbg.plugins.SaveGenerator">
             <property name="type" value="com.github.vlmap.mbg.plugins.SaveGenerator"/>
-            <property name="id" value="insert"/>
+            <property name="id" value="save"/>
             <property name="insertStatementId" value="___insert___"/>
-
+            <property name="returnValue" value="primaryKey"/>
+            <property name="ignoreNullGeneratorKey" value="true"/>
         </plugin>
         <!--SaveOrUpdate-->
         <plugin type="com.github.vlmap.mbg.plugins.SaveOrUpdateGenerator">
@@ -53,6 +55,8 @@
             <property name="insertStatementId" value="___insert___"/>
 
 
+
+
         </plugin>
         <plugin type="com.github.vlmap.mbg.plugins.SelectCountGenerator">
             <property name="type" value="com.github.vlmap.mbg.plugins.SelectCountGenerator"/>
@@ -60,6 +64,8 @@
 
 
         </plugin>
+
+
         <plugin type="com.github.vlmap.mbg.plugins.SelectKeyGenerator">
             <property name="type" value="com.github.vlmap.mbg.plugins.SelectKeyGenerator"/>
             <property name="id" value="nextKey"/>
@@ -75,7 +81,7 @@
         </plugin>
         <plugin type="com.github.vlmap.mbg.plugins.SelectAllGenerator">
             <property name="type" value="com.github.vlmap.mbg.plugins.SelectAllGenerator"/>
-            <property name="id" value="all"/>
+            <!--<property name="id" value="selectAll"/>-->
 
         </plugin>
 

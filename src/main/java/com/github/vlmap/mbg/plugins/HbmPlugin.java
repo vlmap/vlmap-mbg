@@ -179,9 +179,8 @@ public class HbmPlugin extends PluginAdapter {
             //计算主键生成策略
             calculateIdentifierGenerator(introspectedTable, entityPersister);
 
-
 //            //只使用 Entity类返回的Column生成和privaryKey，其他清理掉
-            Iterator<IntrospectedColumn> iterator = introspectedTable.getNonPrimaryKeyColumns().iterator();
+            Iterator<IntrospectedColumn> iterator = introspectedTable.getBaseColumns().iterator();
 
             while (iterator.hasNext()) {
                 IntrospectedColumn next = iterator.next();
@@ -189,6 +188,23 @@ public class HbmPlugin extends PluginAdapter {
                     iterator.remove();
                 }
             }
+            iterator = introspectedTable.getBLOBColumns().iterator();
+
+            while (iterator.hasNext()) {
+                IntrospectedColumn next = iterator.next();
+                if (!introspectedColumns.contains(next)) {
+                    iterator.remove();
+                }
+            }
+            iterator = introspectedTable.getPrimaryKeyColumns().iterator();
+
+            while (iterator.hasNext()) {
+                IntrospectedColumn next = iterator.next();
+                if (!introspectedColumns.contains(next)) {
+                    iterator.remove();
+                }
+            }
+
 
             IntrospectedTableUtils.calculate(introspectedTable);
             String modelClass = IntrospectedTableUtils.getHbmModelClass(introspectedTable);
